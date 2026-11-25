@@ -20,7 +20,7 @@ Bozza tecnica preparata durante lo sviluppo: non è un parere legale.
 | Dati in UE | Server WordPress del titolare (hosting in Italia) |
 
 ## Da fare (titolare / consulente)
-1. ✅ **Titolare**: Gian Maria Colotto, postmaster@creaitivity.it (valutare se aggiungere indirizzo/P.IVA).
+1. ✅ **Titolare**: Gian Maria Colotto, P.IVA IT02498820444, postmaster@creaitivity.it.
 2. ✅ **Pagina informativa pubblica**: https://www.creaitivity.it/privacy-conto-spesa/ — da inserire nella scheda Play Store.
 3. **Registro dei trattamenti** (art. 30 GDPR): aggiungere «Statistiche d'acquisto app Conto Spesa».
 4. **Valutazione d'impatto (DPIA, art. 35)**: le abitudini d'acquisto analizzate nel tempo possono rientrare nei casi che la richiedono; farla valutare.

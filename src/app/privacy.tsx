@@ -12,7 +12,7 @@ import { colors, font, space } from '../lib/theme';
 const SECTIONS: { title: string; text: string }[] = [
   {
     title: 'Chi tratta i dati',
-    text: 'Titolare del trattamento: Gian Maria Colotto. Contatto per la privacy: postmaster@creaitivity.it. Informativa completa: www.creaitivity.it/privacy-conto-spesa',
+    text: 'Titolare del trattamento: Gian Maria Colotto, P.IVA IT02498820444. Contatto per la privacy: postmaster@creaitivity.it. Informativa completa: www.creaitivity.it/privacy-conto-spesa',
   },
   {
     title: 'Cosa resta sul tuo telefono',
