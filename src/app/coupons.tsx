@@ -138,6 +138,20 @@ export default function CouponsScreen() {
           />
         </View>
 
+        <View style={[styles.card, styles.settingRow]}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Scansione automatica</Text>
+            <Text style={styles.help}>
+              Inquadri il cartellino e il prezzo si aggiunge da solo quando è chiaro. Se è dubbio, scatti e scegli tu.
+            </Text>
+          </View>
+          <Switch
+            value={state.settings.autoScan}
+            onValueChange={(v) => dispatch({ type: 'settings/update', patch: { autoScan: v } })}
+            trackColor={{ true: colors.primary }}
+          />
+        </View>
+
         <Text style={styles.section}>I tuoi coupon ({sorted.length})</Text>
         {sorted.length === 0 ? <Text style={styles.help}>Nessun coupon salvato.</Text> : null}
         {sorted.map((c) => {

@@ -74,3 +74,16 @@ export function extractPriceCandidates(lines: string[]): PriceCandidate[] {
     .sort((a, b) => (Number(a.isUnitPrice) - Number(b.isUnitPrice)) || b.score - a.score)
     .slice(0, 6);
 }
+
+/**
+ * Modalità automatica: restituisce il prezzo SOLO se la lettura non è ambigua,
+ * cioè il primo candidato non è un prezzo al kg/l, ha un punteggio buono
+ * e stacca nettamente il secondo. Altrimenti null → si chiede conferma.
+ */
+export function pickConfidentPrice(candidates: PriceCandidate[]): PriceCandidate | null {
+  const real = candidates.filter((c) => !c.isUnitPrice);
+  const [first, second] = real;
+  if (!first || first.score < 4) return null;
+  if (second && first.score - second.score < 3) return null;
+  return first;
+}

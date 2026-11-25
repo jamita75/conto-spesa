@@ -1,7 +1,7 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,13 +15,20 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ItemEditor } from '../components/ItemEditor';
 import { cartSubtotal } from '../features/cart/types';
-import { extractPriceCandidates, type PriceCandidate } from '../features/ocr/priceParser';
+import { extractPriceCandidates, pickConfidentPrice, type PriceCandidate } from '../features/ocr/priceParser';
 import { isOcrAvailable, recognizeText } from '../features/ocr/recognizer';
-import { formatEuro } from '../lib/money';
+import { formatEuro, type Cents } from '../lib/money';
 import { colors, radius, space } from '../lib/theme';
-import { useStore } from '../store/AppStore';
+import { newId, useStore } from '../store/AppStore';
 
 type Phase = { kind: 'camera' } | { kind: 'reading' } | { kind: 'confirm'; candidates: PriceCandidate[] };
+type Toast = { id: string; price: Cents; qty: number };
+
+/** pausa tra una lettura automatica e la successiva */
+const AUTO_INTERVAL_MS = 600;
+/** letture uguali consecutive richieste prima di aggiungere da solo */
+const AUTO_STABLE_READS = 2;
+const TOAST_MS = 4000;
 
 export default function ScanScreen() {
   const { state, dispatch } = useStore();
@@ -31,8 +38,90 @@ export default function ScanScreen() {
   const [ready, setReady] = useState(false);
   const [torch, setTorch] = useState(false);
   const [phase, setPhase] = useState<Phase>({ kind: 'camera' });
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
+  const [autoStatus, setAutoStatus] = useState<'idle' | 'looking' | 'found'>('idle');
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const ocr = isOcrAvailable();
+  const auto = state.settings.autoScan && ocr;
+
+  // stato della lettura continua (ref: non deve ridisegnare lo schermo)
+  const busy = useRef(false);
+  const streak = useRef<{ cents: Cents; count: number } | null>(null);
+  /** ultimo prezzo aggiunto in automatico: bloccato finché l'inquadratura non cambia */
+  const blocked = useRef<Cents | null>(null);
+
+  const showToast = useCallback((t: Toast) => {
+    setToast(t);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), TOAST_MS);
+  }, []);
+
+  useEffect(() => () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+  }, []);
+
+  const addItem = useCallback(
+    (price: Cents, qty: number, label?: string) => {
+      const id = newId();
+      dispatch({ type: 'item/add', id, item: { price, qty, label, source: 'scan' } });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showToast({ id, price, qty });
+    },
+    [dispatch, showToast],
+  );
+
+  // ---- lettura automatica continua ----
+  useEffect(() => {
+    if (!auto || !ready || phase.kind !== 'camera') {
+      setAutoStatus('idle');
+      return;
+    }
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const tick = async () => {
+      if (!alive) return;
+      if (!busy.current && camera.current) {
+        busy.current = true;
+        try {
+          const photo = await camera.current.takePictureAsync({ quality: 0.5, shutterSound: false });
+          if (!alive || !photo) return;
+          const pick = pickConfidentPrice(extractPriceCandidates(await recognizeText(photo.uri)));
+          if (!alive) return;
+
+          // l'inquadratura è cambiata: lo stesso prezzo si potrà riaggiungere
+          if (!pick || pick.cents !== blocked.current) blocked.current = null;
+
+          if (!pick || pick.cents === blocked.current) {
+            streak.current = null;
+            setAutoStatus('looking');
+          } else {
+            const count = streak.current?.cents === pick.cents ? streak.current.count + 1 : 1;
+            streak.current = { cents: pick.cents, count };
+            setAutoStatus('found');
+            if (count >= AUTO_STABLE_READS) {
+              addItem(pick.cents, 1);
+              blocked.current = pick.cents;
+              streak.current = null;
+            }
+          }
+        } catch {
+          // fotogramma non riuscito: si riprova al giro successivo
+        } finally {
+          busy.current = false;
+        }
+      }
+      if (alive) timer = setTimeout(tick, AUTO_INTERVAL_MS);
+    };
+
+    setAutoStatus('looking');
+    timer = setTimeout(tick, 400);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [auto, ready, phase.kind, addItem]);
 
   if (!permission) return <View style={styles.black} />;
 
@@ -51,6 +140,7 @@ export default function ScanScreen() {
     );
   }
 
+  // scatto manuale: mostra sempre i prezzi trovati e chiede conferma
   const capture = async () => {
     if (!camera.current || !ready || phase.kind !== 'camera') return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -59,23 +149,42 @@ export default function ScanScreen() {
       return;
     }
     setPhase({ kind: 'reading' });
+    // aspetta che l'eventuale lettura automatica in corso finisca
+    for (let i = 0; i < 20 && busy.current; i++) await new Promise((r) => setTimeout(r, 100));
     try {
+      busy.current = true;
       const photo = await camera.current.takePictureAsync({ quality: 0.7, shutterSound: false });
       const lines = await recognizeText(photo.uri);
       setPhase({ kind: 'confirm', candidates: extractPriceCandidates(lines) });
     } catch {
       setPhase({ kind: 'confirm', candidates: [] });
+    } finally {
+      busy.current = false;
     }
   };
 
-  const added = (price: number, qty: number, label?: string) => {
-    dispatch({ type: 'item/add', item: { price, qty, label, source: 'scan' } });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const newTotal = cartSubtotal(state.items) + price * qty;
-    setToast(`+${formatEuro(price * qty)} · totale ${formatEuro(newTotal)}`);
-    setTimeout(() => setToast(null), 2200);
-    setPhase({ kind: 'camera' }); // resta in modalità scansione per il prodotto successivo
+  const toastPlusOne = () => {
+    if (!toast) return;
+    const qty = toast.qty + 1;
+    dispatch({ type: 'item/update', id: toast.id, patch: { qty } });
+    Haptics.selectionAsync();
+    showToast({ ...toast, qty });
   };
+
+  const toastUndo = () => {
+    if (!toast) return;
+    dispatch({ type: 'item/remove', id: toast.id });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    setToast(null);
+  };
+
+  const hint = !ocr
+    ? 'Lettura automatica disponibile nella versione installata (APK)'
+    : auto
+      ? autoStatus === 'found'
+        ? 'Prezzo trovato, tieni fermo…'
+        : 'Inquadra il cartellino: aggiungo da solo'
+      : 'Inquadra il prezzo e scatta';
 
   return (
     <View style={styles.black}>
@@ -89,10 +198,8 @@ export default function ScanScreen() {
 
       {/* mirino */}
       <View pointerEvents="none" style={styles.overlay}>
-        <View style={styles.frame} />
-        <Text style={styles.hint}>
-          {ocr ? 'Inquadra il prezzo dentro il riquadro' : 'Lettura automatica disponibile nella versione installata (APK)'}
-        </Text>
+        <View style={[styles.frame, auto && autoStatus === 'found' && { borderColor: colors.accent }]} />
+        <Text style={styles.hint}>{hint}</Text>
       </View>
 
       {/* barra superiore */}
@@ -103,14 +210,37 @@ export default function ScanScreen() {
         <View style={styles.totalPill}>
           <Text style={styles.totalPillText}>{formatEuro(cartSubtotal(state.items))}</Text>
         </View>
-        <Pressable style={[styles.roundBtn, torch && { backgroundColor: colors.accent }]} onPress={() => setTorch((t) => !t)}>
-          <Text style={styles.roundTxt}>💡</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: space(2) }}>
+          {ocr ? (
+            <Pressable
+              style={[styles.autoBtn, state.settings.autoScan && styles.autoBtnOn]}
+              onPress={() => dispatch({ type: 'settings/update', patch: { autoScan: !state.settings.autoScan } })}
+            >
+              <Text style={styles.autoTxt}>AUTO</Text>
+            </Pressable>
+          ) : null}
+          <Pressable style={[styles.roundBtn, torch && { backgroundColor: colors.accent }]} onPress={() => setTorch((t) => !t)}>
+            <Text style={styles.roundTxt}>💡</Text>
+          </Pressable>
+        </View>
       </View>
 
+      {/* conferma aggiunta con annulla / +1 */}
       {toast ? (
         <View style={[styles.toast, { top: insets.top + 70 }]}>
-          <Text style={styles.toastText}>{toast}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.toastText}>
+              +{formatEuro(toast.price * toast.qty)}
+              {toast.qty > 1 ? ` (${toast.qty}×)` : ''}
+            </Text>
+            <Text style={styles.toastSub}>totale {formatEuro(cartSubtotal(state.items))}</Text>
+          </View>
+          <Pressable style={styles.toastBtn} onPress={toastPlusOne}>
+            <Text style={styles.toastBtnTxt}>+1</Text>
+          </Pressable>
+          <Pressable style={[styles.toastBtn, styles.toastUndo]} onPress={toastUndo}>
+            <Text style={[styles.toastBtnTxt, { color: colors.danger }]}>Annulla</Text>
+          </Pressable>
         </View>
       ) : null}
 
@@ -120,13 +250,12 @@ export default function ScanScreen() {
           <Pressable style={styles.shutter} onPress={capture} disabled={phase.kind === 'reading'}>
             {phase.kind === 'reading' ? <ActivityIndicator color={colors.primary} /> : <View style={styles.shutterInner} />}
           </Pressable>
-          <Text style={styles.shutterHint}>{phase.kind === 'reading' ? 'Leggo il prezzo…' : 'Scatta'}</Text>
+          <Text style={styles.shutterHint}>
+            {phase.kind === 'reading' ? 'Leggo il prezzo…' : auto ? 'Scatta per scegliere tu il prezzo' : 'Scatta'}
+          </Text>
         </View>
       ) : (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.sheetWrap}
-        >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.sheetWrap}>
           <ScrollView
             style={styles.sheet}
             contentContainerStyle={{ padding: space(4), paddingBottom: insets.bottom + space(4) }}
@@ -142,7 +271,10 @@ export default function ScanScreen() {
               candidates={phase.candidates}
               confirmLabel="Aggiungi e continua"
               onCancel={() => setPhase({ kind: 'camera' })}
-              onConfirm={({ price, qty, label }) => added(price, qty, label)}
+              onConfirm={({ price, qty, label }) => {
+                addItem(price, qty, label);
+                setPhase({ kind: 'camera' });
+              }}
             />
           </ScrollView>
         </KeyboardAvoidingView>
@@ -158,7 +290,7 @@ const styles = StyleSheet.create({
   permText: { fontSize: 15, color: colors.muted, textAlign: 'center', marginTop: space(2) },
   permBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: space(3), paddingHorizontal: space(8), marginTop: space(6) },
   permBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   frame: {
     width: '78%',
     aspectRatio: 1.7,
@@ -171,10 +303,29 @@ const styles = StyleSheet.create({
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space(4) },
   roundBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   roundTxt: { color: '#fff', fontSize: 18 },
+  autoBtn: { height: 44, paddingHorizontal: space(3), borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)' },
+  autoBtnOn: { backgroundColor: colors.primary, borderColor: '#fff' },
+  autoTxt: { color: '#fff', fontWeight: '800', fontSize: 13, letterSpacing: 0.8 },
   totalPill: { backgroundColor: colors.primary, borderRadius: radius.lg, paddingVertical: space(2), paddingHorizontal: space(4) },
   totalPillText: { color: '#fff', fontWeight: '800', fontSize: 18 },
-  toast: { position: 'absolute', alignSelf: 'center', backgroundColor: colors.card, borderRadius: radius.lg, paddingVertical: space(2), paddingHorizontal: space(4) },
-  toastText: { fontWeight: '800', color: colors.primaryDark, fontSize: 15 },
+  toast: {
+    position: 'absolute',
+    left: space(4),
+    right: space(4),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space(2),
+    backgroundColor: colors.card,
+    borderRadius: radius.md,
+    paddingVertical: space(2),
+    paddingLeft: space(4),
+    paddingRight: space(2),
+  },
+  toastText: { fontWeight: '800', color: colors.primaryDark, fontSize: 17 },
+  toastSub: { color: colors.muted, fontSize: 12 },
+  toastBtn: { backgroundColor: colors.primarySoft, borderRadius: radius.sm, paddingVertical: space(2), paddingHorizontal: space(3) },
+  toastUndo: { backgroundColor: '#FBE4E2' },
+  toastBtnTxt: { fontWeight: '800', color: colors.primaryDark, fontSize: 15 },
   bottom: { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center' },
   shutter: { width: 78, height: 78, borderRadius: 39, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
   shutterInner: { width: 62, height: 62, borderRadius: 31, borderWidth: 3, borderColor: colors.primary },

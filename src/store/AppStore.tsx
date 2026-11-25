@@ -12,6 +12,8 @@ import type { Coupon } from '../features/coupons/types';
 export type Settings = {
   /** se true i coupon sbloccati si sommano, altrimenti si applica il migliore */
   stackCoupons: boolean;
+  /** modalità automatica: legge di continuo e aggiunge da solo i prezzi sicuri */
+  autoScan: boolean;
 };
 
 export type AppState = {
@@ -28,12 +30,12 @@ const initialState: AppState = {
   schema: SCHEMA_VERSION,
   items: [],
   coupons: [],
-  settings: { stackCoupons: false },
+  settings: { stackCoupons: false, autoScan: true },
 };
 
 export type Action =
   | { type: 'hydrate'; state: AppState }
-  | { type: 'item/add'; item: Omit<CartItem, 'id' | 'createdAt'> }
+  | { type: 'item/add'; item: Omit<CartItem, 'id' | 'createdAt'>; id?: string }
   | { type: 'item/update'; id: string; patch: Partial<Omit<CartItem, 'id'>> }
   | { type: 'item/remove'; id: string }
   | { type: 'cart/clear' }
@@ -51,7 +53,7 @@ function reducer(state: AppState, action: Action): AppState {
     case 'item/add':
       return {
         ...state,
-        items: [{ ...action.item, id: newId(), createdAt: Date.now() }, ...state.items],
+        items: [{ ...action.item, id: action.id ?? newId(), createdAt: Date.now() }, ...state.items],
       };
     case 'item/update':
       return {

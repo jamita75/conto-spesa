@@ -1,7 +1,8 @@
 # Conto Spesa — guida rapida
 
 ## Cosa fa
-- **Inquadra prezzo**: scatti all'etichetta, l'app legge i prezzi e tu tocchi quello giusto (il prezzo al kg/litro è segnalato e non viene scelto in automatico). Dopo ogni prodotto resta in modalità scansione.
+- **Modalità AUTO** (attiva di base): punti il cartellino e basta. Quando il prezzo è chiaro lo aggiunge da solo con una vibrazione; compaiono «+1» (stesso prodotto un'altra volta) e «Annulla». Lo stesso cartellino non viene contato due volte finché non sposti il telefono. Se il prezzo è dubbio non aggiunge nulla: scatti e scegli tu.
+- **Inquadra prezzo** (scatto manuale): scatti all'etichetta, l'app legge i prezzi e tu tocchi quello giusto (il prezzo al kg/litro è segnalato e non viene scelto in automatico). Dopo ogni prodotto resta in modalità scansione.
 - **A mano**: inserisci prezzo, quantità e nome.
 - **Totale** sempre visibile, quantità +/−, tieni premuto un prodotto per eliminarlo.
 - **Coupon e obiettivi**: spesa minima, sconto in € o %, codice, scadenza. Senza sconto diventa un obiettivo («arrivare a 50 €»).

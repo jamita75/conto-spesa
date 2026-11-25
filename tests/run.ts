@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { computeCouponProgress } from '../src/features/coupons/couponLogic';
 import type { Coupon } from '../src/features/coupons/types';
-import { extractPriceCandidates } from '../src/features/ocr/priceParser';
+import { extractPriceCandidates, pickConfidentPrice } from '../src/features/ocr/priceParser';
 import { parseEuroInput } from '../src/lib/money';
 
 let passed = 0;
@@ -35,6 +35,19 @@ t('euro grandi e centesimi piccoli separati', () => {
 });
 t('punto decimale', () => {
   assert.equal(extractPriceCandidates(['EUR 12.50'])[0].cents, 1250);
+});
+
+// --- modalità automatica ---
+t('auto: etichetta chiara → prezzo sicuro', () => {
+  const c = extractPriceCandidates(['Prosciutto cotto 120g', '2,49 €', '20,75 €/kg']);
+  assert.equal(pickConfidentPrice(c)?.cents, 249);
+});
+t('auto: due prezzi simili → chiede conferma', () => {
+  const c = extractPriceCandidates(['3,49 €', '2,49 €']);
+  assert.equal(pickConfidentPrice(c), null);
+});
+t('auto: numero senza € → chiede conferma', () => {
+  assert.equal(pickConfidentPrice(extractPriceCandidates(['cod 12,30 lotto'])), null);
 });
 
 // --- input utente ---
