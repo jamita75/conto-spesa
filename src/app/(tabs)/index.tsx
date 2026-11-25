@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CouponLine } from '../../components/CouponLine';
 import { cartCount, cartSubtotal, type CartItem } from '../../features/cart/types';
+import { segmentInfo } from '../../features/catalog/segments';
 import { computeCouponProgress, couponsForStore } from '../../features/coupons/couponLogic';
 import { STORE_TYPE_ICON, storeLabel } from '../../features/store/types';
 import { formatEuro } from '../../lib/money';
@@ -15,8 +16,8 @@ export default function CartScreen() {
   const subtotal = cartSubtotal(state.items);
   const storeCoupons = useMemo(() => couponsForStore(state.coupons, state.store), [state.coupons, state.store]);
   const progress = useMemo(
-    () => computeCouponProgress(storeCoupons, subtotal, state.settings.stackCoupons),
-    [storeCoupons, subtotal, state.settings.stackCoupons],
+    () => computeCouponProgress(storeCoupons, state.items, state.settings.stackCoupons),
+    [storeCoupons, state.items, state.settings.stackCoupons],
   );
   const pieces = cartCount(state.items);
 
@@ -111,15 +112,17 @@ export default function CartScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Il carrello è vuoto</Text>
-            <Text style={styles.emptyText}>Premi «Inquadra prezzo» qui sotto e punta il telefono sul cartellino del prodotto.</Text>
+            <Text style={styles.emptyText}>Premi «Inquadra prezzo» qui sotto e punta il telefono sul cartellino dello scaffale o sull'etichetta della vaschetta.</Text>
           </View>
         }
         renderItem={({ item }) => (
-          <View style={styles.item}>
+          <Pressable style={styles.item} onPress={() => router.push({ pathname: '/add', params: { id: item.id } })}>
+            <Text style={{ fontSize: 26 }}>{segmentInfo(item.segment).emoji}</Text>
             <View style={{ flex: 1 }}>
               <Text style={styles.itemName} numberOfLines={2}>
                 {item.label ?? 'Prodotto senza nome'}
               </Text>
+              {item.privateLabel ? <Text style={styles.plTag}>Marca del negozio</Text> : null}
               <Text style={styles.itemSub}>
                 {formatEuro(item.price)}
                 {item.qty > 1 ? ` × ${item.qty} = ${formatEuro(item.price * item.qty)}` : ''}
@@ -134,7 +137,7 @@ export default function CartScreen() {
                 <Text style={styles.qtyBtnText}>+</Text>
               </Pressable>
             </View>
-          </View>
+          </Pressable>
         )}
       />
 
@@ -224,6 +227,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   itemName: { fontSize: font.body, fontWeight: '700', color: colors.text },
+  plTag: { alignSelf: 'flex-start', fontSize: 12, fontWeight: '800', color: colors.primaryDark, backgroundColor: colors.primarySoft, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, marginTop: 3 },
   itemSub: { fontSize: font.body - 1, color: colors.muted, marginTop: 2 },
   qtyBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg, borderRadius: radius.lg },
   qtyBtn: { paddingHorizontal: space(4), paddingVertical: space(2) },

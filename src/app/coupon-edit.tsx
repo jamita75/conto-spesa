@@ -19,7 +19,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BarcodeView } from '../components/BarcodeView';
 import { BigButton, Choice, SectionTitle } from '../components/ui';
 import { makeBarcode } from '../features/barcode/encode';
-import type { CouponKind } from '../features/coupons/types';
+import { SEGMENTS, type Segment } from '../features/catalog/segments';
+import type { CouponKind, CouponScope } from '../features/coupons/types';
 import { CHAINS } from '../features/store/types';
 import { centsToInput, formatEuro, parseEuroInput } from '../lib/money';
 import { colors, font, radius, space } from '../lib/theme';
@@ -56,7 +57,10 @@ export default function CouponEdit() {
   const [name, setName] = useState(existing?.name ?? '');
   const [chain, setChain] = useState<string>(existing?.chain ?? '');
   const [expires, setExpires] = useState<Date | undefined>(existing?.expiresOn ? fromIso(existing.expiresOn) : undefined);
-  const [showPicker, setShowPicker] = useState(false);
+  const [starts, setStarts] = useState<Date | undefined>(existing?.startsOn ? fromIso(existing.startsOn) : undefined);
+  const [picker, setPicker] = useState<'start' | 'end' | null>(null);
+  const [scopeKind, setScopeKind] = useState<CouponScope['kind']>(existing?.scope?.kind ?? 'all');
+  const [segments, setSegments] = useState<Segment[]>(existing?.scope?.kind === 'segments' ? existing.scope.segments : []);
   const [code, setCode] = useState(existing?.code ?? '');
   const [scanning, setScanning] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
@@ -64,9 +68,12 @@ export default function CouponEdit() {
   const chainOptions = [...new Set([...(state.store?.chain ? [state.store.chain] : []), ...CHAINS.food, ...CHAINS.nonfood])];
 
   const onDate = (e: DateTimePickerEvent, d?: Date) => {
-    setShowPicker(Platform.OS === 'ios');
-    if (e.type === 'set' && d) setExpires(d);
+    const which = picker;
+    if (Platform.OS !== 'ios') setPicker(null);
+    if (e.type === 'set' && d) (which === 'start' ? setStarts : setExpires)(d);
   };
+  const toggleSegment = (id: Segment) =>
+    setSegments((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
 
   const startScan = async () => {
     if (!permission?.granted) {
@@ -100,6 +107,14 @@ export default function CouponEdit() {
         if (!Number.isFinite(v) || v <= 0 || v > 100) return Alert.alert('Percentuale non valida', 'Scrivi un numero da 1 a 100');
       }
     }
+    if (scopeKind === 'segments' && segments.length === 0) {
+      return Alert.alert('Scegli il reparto', 'Tocca almeno un reparto su cui vale il buono (es. Carne).');
+    }
+    if (starts && expires && starts.getTime() > expires.getTime()) {
+      return Alert.alert('Date da controllare', 'La data di inizio è dopo la scadenza.');
+    }
+    const scope: CouponScope | undefined =
+      scopeKind === 'all' ? undefined : scopeKind === 'segments' ? { kind: 'segments', segments } : { kind: scopeKind };
     const cleanCode = code.trim() || undefined;
     if (cleanCode && !makeBarcode(cleanCode)) {
       return Alert.alert('Codice non valido', 'Il codice può contenere solo lettere, numeri e simboli comuni.');
@@ -117,7 +132,9 @@ export default function CouponEdit() {
       value: v,
       active: existing?.active ?? true,
       expiresOn: expires ? toIso(expires) : undefined,
+      startsOn: starts ? toIso(starts) : undefined,
       chain: chain || undefined,
+      scope,
     };
     if (existing) dispatch({ type: 'coupon/update', id: existing.id, patch: data });
     else dispatch({ type: 'coupon/add', coupon: data });
@@ -214,12 +231,55 @@ export default function CouponEdit() {
           />
           <Text style={styles.word}>€</Text>
         </View>
-        <Text style={styles.help}>Lascia vuoto lo sconto se vuoi solo un obiettivo di spesa (es. arrivare a 50 €).</Text>
+        <Text style={styles.help}>
+          {scopeKind === 'all'
+            ? 'Lascia vuoto lo sconto se vuoi solo un obiettivo di spesa (es. arrivare a 50 €).'
+            : 'La spesa minima conta solo i prodotti scelti qui sotto.'}
+        </Text>
 
-        <SectionTitle>Scadenza</SectionTitle>
+        <SectionTitle>Su quali prodotti vale</SectionTitle>
+        <Choice
+          options={[
+            { value: 'all', label: '🛒 Tutta la spesa' },
+            { value: 'privateLabel', label: '🏷️ Marca del negozio' },
+            { value: 'otherBrands', label: '⭐ Altre marche' },
+            { value: 'segments', label: '🥩 Solo alcuni reparti' },
+          ]}
+          value={scopeKind}
+          onChange={setScopeKind}
+        />
+        {scopeKind === 'segments' ? (
+          <View style={[styles.presets, { marginTop: space(3) }]}>
+            {SEGMENTS.filter((x) => x.id !== 'altro').map((x) => {
+              const on = segments.includes(x.id);
+              return (
+                <Pressable key={x.id} style={[styles.preset, on && styles.presetActive]} onPress={() => toggleSegment(x.id)}>
+                  <Text style={styles.presetText}>
+                    {on ? '✓ ' : ''}
+                    {x.emoji} {x.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+
+        <SectionTitle>Validità</SectionTitle>
+        <Text style={styles.dateLabel}>Valido dal</Text>
         <View style={styles.row}>
-          <Pressable style={[styles.dateBtn, { flex: 1 }]} onPress={() => setShowPicker(true)}>
-            <Text style={styles.dateText}>📅 {expires ? itDate(expires) : 'Scegli la data'}</Text>
+          <Pressable style={[styles.dateBtn, { flex: 1 }]} onPress={() => setPicker('start')}>
+            <Text style={styles.dateText}>📅 {starts ? itDate(starts) : 'Da subito'}</Text>
+          </Pressable>
+          {starts ? (
+            <Pressable style={styles.clearBtn} onPress={() => setStarts(undefined)} accessibilityLabel="Togli data di inizio">
+              <Text style={styles.clearText}>✕</Text>
+            </Pressable>
+          ) : null}
+        </View>
+        <Text style={styles.dateLabel}>Scade il</Text>
+        <View style={styles.row}>
+          <Pressable style={[styles.dateBtn, { flex: 1 }]} onPress={() => setPicker('end')}>
+            <Text style={styles.dateText}>📅 {expires ? itDate(expires) : 'Nessuna scadenza'}</Text>
           </Pressable>
           {expires ? (
             <Pressable style={styles.clearBtn} onPress={() => setExpires(undefined)} accessibilityLabel="Togli scadenza">
@@ -227,11 +287,11 @@ export default function CouponEdit() {
             </Pressable>
           ) : null}
         </View>
-        {showPicker ? (
+        {picker ? (
           <DateTimePicker
-            value={expires ?? new Date()}
+            value={(picker === 'start' ? starts : expires) ?? starts ?? new Date()}
             mode="date"
-            minimumDate={new Date()}
+            minimumDate={picker === 'end' ? starts ?? new Date() : undefined}
             display={Platform.OS === 'ios' ? 'inline' : 'default'}
             onChange={onDate}
             locale="it-IT"
@@ -316,6 +376,7 @@ const styles = StyleSheet.create({
   },
   help: { fontSize: font.small, color: colors.muted, marginTop: space(2), lineHeight: 20 },
   row: { flexDirection: 'row', gap: space(2), alignItems: 'stretch' },
+  dateLabel: { fontSize: font.small, fontWeight: '700', color: colors.muted, marginTop: space(2), marginBottom: space(1) },
   dateBtn: {
     backgroundColor: colors.card,
     borderWidth: 1.5,

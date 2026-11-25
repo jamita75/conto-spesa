@@ -5,7 +5,7 @@
  * l'utente può sempre correggerlo.
  */
 const STOP_WORDS =
-  /\b(prezzo|offerta|promo|sconto|risparmi|euro|eur|al\s*kg|al\s*lt|al\s*litro|kg|cod|codice|art|lotto|scad|scadenza|iva|valido|fino|dal|al\b|carta|tessera|fedelt|soci|cad|pz|confezione|conf\b|ean|sottocosto|prendi|paghi|anzich|invece|prima|ora\b|solo)\b/i;
+  /\b(prezzo|offerta|promo|sconto|risparmi|euro|eur|al\s*kg|al\s*lt|al\s*litro|kg|cod|codice|art|lotto|scad|scadenza|iva|valido|fino|dal|al\b|carta|tessera|fedelt|soci|cad|pz|confezione|conf\b|confezionato|consumarsi|entro|peso|netto|tara|ean|sottocosto|prendi|paghi|anzich|invece|prima|ora\b|solo)\b/i;
 const PRICE_LIKE = /\d+\s?[.,]\s?\d{2}/;
 
 export function extractProductName(lines: string[]): string | undefined {

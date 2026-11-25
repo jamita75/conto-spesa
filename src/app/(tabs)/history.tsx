@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SEGMENTS } from '../../features/catalog/segments';
 import { formatDay, monthName, monthSummary } from '../../features/history/types';
 import { STORE_TYPE_ICON, storeLabel } from '../../features/store/types';
 import { formatEuro } from '../../lib/money';
@@ -70,6 +71,32 @@ export default function HistoryScreen() {
               <Text style={styles.sumSub}>Senza negozio indicato: {formatEuro(summary.byType.unknown)}</Text>
             ) : null}
           </View>
+
+          {summary.count ? (
+            <View style={styles.segCard}>
+              <Text style={styles.segTitle}>Per reparto</Text>
+              {(() => {
+                const rows = SEGMENTS.map((x) => ({ ...x, v: summary.bySegment[x.id] ?? 0 }))
+                  .filter((r) => r.v > 0)
+                  .sort((a, b) => b.v - a.v);
+                const max = rows[0]?.v ?? 1;
+                return rows.map((r) => (
+                  <View key={r.id} style={styles.segRow}>
+                    <Text style={styles.segName}>
+                      {r.emoji} {r.label}
+                    </Text>
+                    <View style={styles.segBarTrack}>
+                      <View style={[styles.segBar, { width: `${(r.v / max) * 100}%` }]} />
+                    </View>
+                    <Text style={styles.segValue}>{formatEuro(r.v)}</Text>
+                  </View>
+                ));
+              })()}
+              {summary.privateLabel > 0 ? (
+                <Text style={styles.cardSub}>🏷️ Di cui a marchio del negozio: {formatEuro(summary.privateLabel)}</Text>
+              ) : null}
+            </View>
+          ) : null}
         </>
       }
       ListEmptyComponent={
@@ -139,6 +166,13 @@ const styles = StyleSheet.create({
   splitBox: { flex: 1, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: radius.md, padding: space(3) },
   splitLabel: { color: '#fff', fontSize: font.small, fontWeight: '700' },
   splitValue: { color: '#fff', fontSize: font.big, fontWeight: '800', marginTop: 2 },
+  segCard: { backgroundColor: colors.card, borderRadius: radius.md, padding: space(4), marginBottom: space(4), borderWidth: 1, borderColor: colors.border, gap: space(2) },
+  segTitle: { fontSize: font.small, fontWeight: '800', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.6 },
+  segRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
+  segName: { width: 150, fontSize: 14, color: colors.text, fontWeight: '600' },
+  segBarTrack: { flex: 1, height: 10, borderRadius: 5, backgroundColor: colors.track, overflow: 'hidden' },
+  segBar: { height: '100%', backgroundColor: colors.primary, borderRadius: 5 },
+  segValue: { width: 78, textAlign: 'right', fontSize: 14, fontWeight: '800', color: colors.text },
   empty: { fontSize: font.body, color: colors.muted, textAlign: 'center', marginTop: space(6), lineHeight: 24 },
   card: { backgroundColor: colors.card, borderRadius: radius.md, padding: space(4), marginBottom: space(3), borderWidth: 1, borderColor: colors.border },
   cardRow: { flexDirection: 'row', alignItems: 'center', gap: space(3) },

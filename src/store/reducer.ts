@@ -96,7 +96,7 @@ export function reducer(state: AppState, action: Action): AppState {
       const subtotal = cartSubtotal(state.items);
       const progress = computeCouponProgress(
         couponsForStore(state.coupons, state.store),
-        subtotal,
+        state.items,
         state.settings.stackCoupons,
       );
       const session: ShoppingSession = {

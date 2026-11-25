@@ -1,5 +1,13 @@
 # Conto Spesa — guida rapida
 
+## Novità versione 1.2
+- **Icona nuova** (lampadina Creaitivity con carrello) e schermata di avvio.
+- Ogni prodotto ha un **reparto** (proposto in automatico dal nome) e l'indicazione **Marca del negozio**. Tocca un prodotto nel carrello per correggerlo.
+- **Buoni per segmento**: su tutta la spesa, solo marca del negozio, solo altre marche, o solo alcuni reparti (es. carne, frutta e verdura). La spesa minima conta solo quei prodotti e ogni buono ha la sua barra.
+- **Valido dal … / Scade il …**: un buono non ancora iniziato non viene applicato e compare come promemoria.
+- **Etichette del fresco**: sulle vaschette pesate legge l'importo «da pagare», ignorando peso e prezzo al kg.
+- **Storico per reparto**: quanto spendi in carne, verdura, ecc. e quanto in prodotti a marchio del negozio.
+
 ## Novità versione 1.1
 - 4 schede in basso: **Spesa**, **Buoni**, **Storico**, **Profilo**. Caratteri e pulsanti più grandi.
 - Il cartellino viene letto anche per il **nome del prodotto** (correggibile).

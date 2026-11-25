@@ -13,8 +13,9 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ItemEditor } from '../components/ItemEditor';
+import { ItemEditor, type ItemDraft } from '../components/ItemEditor';
 import { cartSubtotal } from '../features/cart/types';
+import { classifyProduct } from '../features/catalog/classify';
 import { extractProductName } from '../features/ocr/nameParser';
 import { extractPriceCandidates, pickConfidentPrice, type PriceCandidate } from '../features/ocr/priceParser';
 import { isOcrAvailable, recognizeText } from '../features/ocr/recognizer';
@@ -62,12 +63,13 @@ export default function ScanScreen() {
     if (toastTimer.current) clearTimeout(toastTimer.current);
   }, []);
 
+  const chain = state.store?.chain;
   const addItem = useCallback(
-    (price: Cents, qty: number, label?: string) => {
+    (d: ItemDraft) => {
       const id = newId();
-      dispatch({ type: 'item/add', id, item: { price, qty, label, source: 'scan' } });
+      dispatch({ type: 'item/add', id, item: { ...d, source: 'scan' } });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showToast({ id, price, qty, label });
+      showToast({ id, price: d.price, qty: d.qty, label: d.label });
     },
     [dispatch, showToast],
   );
@@ -103,7 +105,8 @@ export default function ScanScreen() {
             streak.current = { cents: pick.cents, count };
             setAutoStatus('found');
             if (count >= AUTO_STABLE_READS) {
-              addItem(pick.cents, 1, extractProductName(lines));
+              const label = extractProductName(lines);
+              addItem({ price: pick.cents, qty: 1, label, ...classifyProduct(label, chain) });
               blocked.current = pick.cents;
               streak.current = null;
             }
@@ -123,7 +126,7 @@ export default function ScanScreen() {
       alive = false;
       clearTimeout(timer);
     };
-  }, [auto, ready, phase.kind, addItem]);
+  }, [auto, ready, phase.kind, addItem, chain]);
 
   if (!permission) return <View style={styles.black} />;
 
@@ -276,11 +279,12 @@ export default function ScanScreen() {
             <ItemEditor
               key={phase.candidates.map((c) => c.cents).join('-') + (phase.name ?? '')}
               candidates={phase.candidates}
-              initialLabel={phase.name}
+              initial={{ label: phase.name }}
+              chain={chain}
               confirmLabel="Aggiungi e continua"
               onCancel={() => setPhase({ kind: 'camera' })}
-              onConfirm={({ price, qty, label }) => {
-                addItem(price, qty, label);
+              onConfirm={(d) => {
+                addItem(d);
                 setPhase({ kind: 'camera' });
               }}
             />

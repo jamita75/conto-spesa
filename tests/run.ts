@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { buildAnonymousRecord } from '../src/features/analytics/collector';
 import { makeBarcode } from '../src/features/barcode/encode';
-import { computeCouponProgress, couponsForStore } from '../src/features/coupons/couponLogic';
+import { guessPrivateLabel } from '../src/features/catalog/privateLabel';
+import { guessSegment } from '../src/features/catalog/segments';
+import { computeCouponProgress, couponsForStore, describeScope } from '../src/features/coupons/couponLogic';
 import { monthSummary } from '../src/features/history/types';
 import { extractProductName } from '../src/features/ocr/nameParser';
 import type { Coupon } from '../src/features/coupons/types';
@@ -42,6 +44,25 @@ t('punto decimale', () => {
   assert.equal(extractPriceCandidates(['EUR 12.50'])[0].cents, 1250);
 });
 
+// --- etichette del fresco (vaschette pesate) ---
+t('vaschetta: prende il da pagare, non peso né €/kg', () => {
+  const lines = ['PETTO DI POLLO A FETTE', 'Peso netto kg 0,532', 'Prezzo €/kg 12,90', 'Da pagare € 6,86', 'Confezionato il 24/11/26'];
+  const c = extractPriceCandidates(lines);
+  assert.equal(c[0].cents, 686);
+  assert.equal(pickConfidentPrice(c)?.cents, 686);
+  assert.ok(!c.some((x) => x.cents === 53));
+});
+t('vaschetta: numeri su righe separate', () => {
+  const lines = ['MACINATO SCELTO', 'PESO NETTO', '0,450 kg', '€/kg', '9,90', 'PREZZO €', '4,46'];
+  const c = extractPriceCandidates(lines);
+  assert.equal(c[0].cents, 446);
+  assert.ok(c.find((x) => x.cents === 990)?.isUnitPrice);
+});
+t('vaschetta: peso con 2 decimali non è un prezzo', () => {
+  const c = extractPriceCandidates(['Zucchine', 'kg 1,25', 'Importo € 2,49']);
+  assert.deepEqual(c.map((x) => x.cents), [249]);
+});
+
 // --- modalità automatica ---
 t('auto: etichetta chiara → prezzo sicuro', () => {
   const c = extractPriceCandidates(['Prosciutto cotto 120g', '2,49 €', '20,75 €/kg']);
@@ -66,32 +87,33 @@ t('input euro', () => {
 const cp = (minSpend: number, value: number, kind: 'amount' | 'percent' = 'amount', extra: Partial<Coupon> = {}): Coupon => ({
   id: `${minSpend}-${value}`, name: `c${minSpend}`, minSpend, value, kind, active: true, ...extra,
 });
+const cartOf = (cents: number) => [{ id: 'x', price: cents, qty: 1, source: 'manual' as const, createdAt: 0 }];
 t('prossimo traguardo e quanto manca', () => {
-  const p = computeCouponProgress([cp(5000, 500), cp(8000, 1000)], 4380, false);
+  const p = computeCouponProgress([cp(5000, 500), cp(8000, 1000)], cartOf(4380), false);
   assert.equal(p.discount, 0);
   assert.equal(p.next?.missing, 620);
   assert.equal(p.next?.extraSaving, 500);
 });
 t('applica il migliore se non cumulabili', () => {
-  const p = computeCouponProgress([cp(5000, 500), cp(3000, 10, 'percent')], 6000, false);
+  const p = computeCouponProgress([cp(5000, 500), cp(3000, 10, 'percent')], cartOf(6000), false);
   assert.equal(p.discount, 600); // 10% di 60 € = 6 € > 5 €
   assert.equal(p.toPay, 5400);
 });
 t('somma se cumulabili', () => {
-  const p = computeCouponProgress([cp(5000, 500), cp(3000, 200)], 6000, true);
+  const p = computeCouponProgress([cp(5000, 500), cp(3000, 200)], cartOf(6000), true);
   assert.equal(p.discount, 700);
 });
 t('ignora scaduti e disattivi', () => {
   const p = computeCouponProgress(
     [cp(1000, 500, 'amount', { expiresOn: '2020-01-01' }), cp(1000, 300, 'amount', { active: false })],
-    2000,
+    cartOf(2000),
     false,
   );
   assert.equal(p.discount, 0);
   assert.equal(p.milestones.length, 0);
 });
 t('obiettivo senza sconto', () => {
-  const p = computeCouponProgress([cp(5000, 0)], 3000, false);
+  const p = computeCouponProgress([cp(5000, 0)], cartOf(3000), false);
   assert.equal(p.next?.missing, 2000);
   assert.equal(p.discount, 0);
 });
@@ -162,6 +184,49 @@ t('coupon: filtrati per insegna del negozio', () => {
   const list = [cp(1000, 100, 'amount', { chain: 'Conad' }), cp(1000, 200, 'amount', { chain: 'Coop' }), cp(1000, 50)];
   assert.deepEqual(couponsForStore(list, { type: 'food', chain: 'Conad' }).map((c) => c.value), [100, 50]);
   assert.equal(couponsForStore(list, undefined).length, 3);
+});
+
+// --- reparti e marca del negozio ---
+t('reparto dal nome', () => {
+  assert.equal(guessSegment('Petto di pollo a fette'), 'carne');
+  assert.equal(guessSegment('Zucchine chiare'), 'fruttaVerdura');
+  assert.equal(guessSegment('Mozzarella di bufala'), 'salumiFormaggi');
+  assert.equal(guessSegment('Spaghetti n.5'), 'dispensa');
+  assert.equal(guessSegment('Detersivo lavatrice'), 'casaIgiene');
+  assert.equal(guessSegment('Xyz'), undefined);
+});
+t('marca del negozio dal nome', () => {
+  assert.equal(guessPrivateLabel('Passata Conad 700g', 'Conad'), true);
+  assert.equal(guessPrivateLabel('Latte Milbona', undefined), true);
+  assert.equal(guessPrivateLabel('Passata Mutti', 'Conad'), undefined);
+});
+
+// --- buoni per reparto / marca / data di inizio ---
+const item = (price: number, qty: number, extra: object = {}) => ({ id: Math.random().toString(), price, qty, source: 'scan' as const, createdAt: 0, ...extra });
+t('buono reparto: conta solo la carne', () => {
+  const items = [item(800, 1, { segment: 'carne' }), item(1500, 1, { segment: 'dispensa' })];
+  const c = cp(1000, 300, 'amount', { scope: { kind: 'segments', segments: ['carne'] } });
+  const p = computeCouponProgress([c], items, false);
+  assert.equal(p.scoped[0].base, 800);
+  assert.equal(p.scoped[0].missing, 200);
+  assert.equal(p.discount, 0);
+  const p2 = computeCouponProgress([c], [...items, item(300, 1, { segment: 'carne' })], false);
+  assert.equal(p2.discount, 300);
+});
+t('buono marca del negozio: 20% solo sui prodotti a marchio', () => {
+  const items = [item(1000, 1, { privateLabel: true }), item(1000, 1)];
+  const p = computeCouponProgress([cp(500, 20, 'percent', { scope: { kind: 'privateLabel' } })], items, false);
+  assert.equal(p.discount, 200);
+});
+t('buono non ancora valido: non conta ma viene ricordato', () => {
+  const tomorrow = new Date(Date.now() + 86_400_000);
+  const iso = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+  const p = computeCouponProgress([cp(100, 50, 'amount', { startsOn: iso })], [item(500, 1)], false);
+  assert.equal(p.discount, 0);
+  assert.equal(p.upcoming.length, 1);
+});
+t('descrizione ambito', () => {
+  assert.equal(describeScope({ kind: 'segments', segments: ['carne', 'pesce', 'fruttaVerdura'] }), 'Carne, Pesce e Frutta e verdura');
 });
 
 // --- stato dell'app ---

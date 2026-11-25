@@ -2,13 +2,17 @@ import { router } from 'expo-router';
 import React from 'react';
 import { FlatList, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { BigButton } from '../../components/ui';
-import { daysToExpiry, describeCoupon, isExpired } from '../../features/coupons/couponLogic';
+import { daysToExpiry, daysToStart, describeCoupon, describeScope, isExpired, isNotYetValid } from '../../features/coupons/couponLogic';
 import type { Coupon } from '../../features/coupons/types';
 import { formatEuro } from '../../lib/money';
 import { colors, font, radius, space } from '../../lib/theme';
 import { useStore } from '../../store/AppStore';
 
+const itDay = (iso: string) => iso.split('-').reverse().join('/');
+
 function expiryText(c: Coupon): { text: string; urgent: boolean } | null {
+  const s = daysToStart(c);
+  if (s != null && s > 0) return { text: s === 1 ? 'Valido da domani' : `Valido dal ${itDay(c.startsOn!)}`, urgent: false };
   const d = daysToExpiry(c);
   if (d == null) return null;
   if (d < 0) return { text: 'Scaduto', urgent: true };
@@ -47,7 +51,7 @@ export default function CouponsScreen() {
         }
         renderItem={({ item: c }) => {
           const exp = expiryText(c);
-          const off = !c.active || isExpired(c);
+          const off = !c.active || isExpired(c) || isNotYetValid(c);
           return (
             <Pressable
               style={[styles.card, off && { opacity: 0.55 }]}
@@ -61,7 +65,9 @@ export default function CouponsScreen() {
                       ? `Obiettivo: arrivare a ${formatEuro(c.minSpend)}`
                       : `${describeCoupon(c)} se spendi almeno ${formatEuro(c.minSpend)}`}
                   </Text>
-                  <Text style={styles.meta}>{c.chain ? `Solo da ${c.chain}` : 'In tutti i negozi'}</Text>
+                  <Text style={styles.meta}>
+                    Su {describeScope(c.scope)} · {c.chain ? `solo da ${c.chain}` : 'in tutti i negozi'}
+                  </Text>
                   {exp ? <Text style={[styles.meta, exp.urgent && { color: colors.danger, fontWeight: '800' }]}>{exp.text}</Text> : null}
                 </View>
                 <Switch

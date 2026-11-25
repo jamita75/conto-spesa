@@ -22,6 +22,10 @@ const PRICE_RX = /(€\s*)?(\d{1,4})\s?[.,]\s?(\d{2})(?!\d)(\s*€)?/g;
 const SPLIT_PRICE_RX = /^\s*(€\s*)?(\d{1,3})\s+(\d{2})\s*(€)?\s*$/;
 const POSITIVE_HINT = /(prezzo|offerta|ora|solo|sconto|promo|euro|€)/i;
 const OLD_PRICE_HINT = /(prima|invece di|anziché|anziche|era|prezzo pieno)/i;
+/** etichette del fresco pesato: importo finale da pagare */
+const PAY_HINT = /(da\s*pagare|importo|totale|prezzo\s*€|prezzo\s*eur\b|euro\s*$)/i;
+/** righe con un peso, non un prezzo (es. "Peso netto kg 0,53", "TARA 0,01", "0,25 kg") */
+const WEIGHT_HINT = /(peso|netto|tara|\bkg\s*\d|\d\s*kg\b|\d\s*gr?\b)/i;
 
 const MAX_CENTS = 999_99; // oltre 999,99 € su un'etichetta è quasi certamente un codice
 
@@ -40,13 +44,21 @@ export function extractPriceCandidates(lines: string[]): PriceCandidate[] {
     }
   };
 
+  let prevLine = '';
   for (const raw of lines) {
     const line = raw.replace(/\s+/g, ' ').trim();
     if (!line) continue;
+    const prev = prevLine;
+    prevLine = line;
 
     const cleaned = line.replace(DATE_LIKE, ' ').replace(PERCENT, ' ');
-    const isUnit = UNIT_HINT.test(line);
-    const isOld = OLD_PRICE_HINT.test(line);
+    // un numero da solo eredita il significato della riga sopra ("€/kg" → "12,90")
+    const onlyNumber = /^[€\s]*\d{1,4}\s?[.,]\s?\d{2}[€\s]*$/.test(cleaned);
+    const ctx = onlyNumber ? `${prev} ${line}` : line;
+    if (WEIGHT_HINT.test(ctx) && !/€/.test(line) && !UNIT_HINT.test(ctx)) continue;
+    const isUnit = UNIT_HINT.test(ctx);
+    const isOld = OLD_PRICE_HINT.test(ctx);
+    const isPay = PAY_HINT.test(ctx);
 
     let matchedSomething = false;
     for (const m of cleaned.matchAll(PRICE_RX)) {
@@ -55,7 +67,8 @@ export function extractPriceCandidates(lines: string[]): PriceCandidate[] {
       let score = 1;
       if (m[1] || m[4]) score += 3; // simbolo € vicino
       if (cleaned.trim().length <= m[0].trim().length + 2) score += 2; // riga che contiene solo il prezzo
-      if (POSITIVE_HINT.test(line)) score += 1;
+      if (POSITIVE_HINT.test(ctx)) score += 1;
+      if (isPay && !isUnit) score += 4;
       if (isUnit) score -= 4;
       if (isOld) score -= 2;
       add(cents, score, isUnit, line);

@@ -53,7 +53,8 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
   `coupon-edit` (buono guidato: calendario, scansione codice), `coupon-show` (codice a barre in cassa),
   `onboarding` (primo avvio + consensi), `privacy` (informativa BOZZA).
 - `src/features/<funzione>/` — logica pura testabile: `cart`, `coupons`, `ocr` (prezzo + nome), `barcode`
-  (EAN-13/Code128 verificati contro JsBarcode), `store` (tipologia GDO + insegne), `history`, `consent`, `analytics`.
+  (EAN-13/Code128 verificati contro JsBarcode), `store` (tipologia GDO + insegne), `history`, `consent`, `analytics`,
+  `catalog` (reparti con parole chiave, marchi del distributore/private label: elenchi da ampliare).
 - `src/store/reducer.ts` — stato e reducer (senza React Native, testabile). `AppStore.tsx` — provider + salvataggio.
   Nuovi dati: campo in `AppState`, azione nel reducer, alzare `SCHEMA_VERSION` (ora 2) e gestire `migrate()`.
 - `src/components/` — `ui.tsx` (BigButton, Card, SwitchRow, Choice), `CouponLine`, `ItemEditor`, `BarcodeView`.
@@ -66,6 +67,10 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
 - Privacy: due consensi separati, spenti di default, revocabili; nessun identificativo personale nei record
   (`analytics/collector.ts`). Revoca = cancellazione immediata della coda. L'invio richiede un backend
   (`UPLOAD_ENDPOINT` è null): non inviare nulla finché informativa definitiva e backend non sono pronti.
+- Buoni: ambito `scope` (tutta la spesa / marca del negozio / altre marche / reparti), `startsOn` + `expiresOn`.
+  La spesa minima di un buono con ambito conta solo i prodotti del suo ambito (`eligibleSubtotal`).
+- Prezzi: il parser gestisce cartellini da scaffale ed etichette del fresco pesato (peso, €/kg, «da pagare»).
+- Icona: sorgenti SVG in `assets/source/` (lampadina bicolore Creaitivity arancio/blu con carrello e €).
 - Ogni nuova funzione: cartella in `src/features/`, logica pura + test in `tests/run.ts`, poi la schermata.
 - Prima di chiudere un lavoro: `npm run typecheck` e `npm test`.
 

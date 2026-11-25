@@ -18,7 +18,7 @@ export type AnonymousPurchase = {
   weekday: number; // 0 = domenica
   storeType?: 'food' | 'nonfood';
   chain?: string; // solo insegne della lista predefinita
-  items: { name?: string; price: number; qty: number; scanned: boolean }[];
+  items: { name?: string; price: number; qty: number; scanned: boolean; segment?: string; privateLabel?: boolean }[];
   total: number;
   discount: number;
   couponsUsed: number;
@@ -44,6 +44,8 @@ export function buildAnonymousRecord(
       price: i.price,
       qty: i.qty,
       scanned: i.source === 'scan',
+      segment: i.segment,
+      privateLabel: i.privateLabel,
     })),
     total: s.toPay,
     discount: s.discount,
