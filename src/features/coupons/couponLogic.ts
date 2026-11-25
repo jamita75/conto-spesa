@@ -1,5 +1,22 @@
 import type { Cents } from '../../lib/money';
+import type { Store } from '../store/types';
 import type { Coupon } from './types';
+
+/** Buoni validi nel negozio scelto: quelli senza insegna valgono ovunque. */
+export function couponsForStore(coupons: Coupon[], store?: Store): Coupon[] {
+  if (!store?.chain) return coupons;
+  const chain = store.chain.toLowerCase();
+  return coupons.filter((c) => !c.chain || c.chain.toLowerCase() === chain);
+}
+
+/** giorni mancanti alla scadenza (0 = scade oggi, negativo = scaduto) */
+export function daysToExpiry(c: Coupon, today = new Date()): number | undefined {
+  if (!c.expiresOn) return undefined;
+  const [y, m, d] = c.expiresOn.split('-').map(Number);
+  const end = new Date(y, m - 1, d).getTime();
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  return Math.round((end - start) / 86_400_000);
+}
 
 export function couponSaving(c: Coupon, subtotal: Cents): Cents {
   if (subtotal < c.minSpend) return 0;

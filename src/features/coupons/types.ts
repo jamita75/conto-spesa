@@ -16,4 +16,8 @@ export type Coupon = {
   active: boolean;
   /** scadenza ISO yyyy-mm-dd (facoltativa) */
   expiresOn?: string;
+  /** insegna dove vale il buono; vuoto = tutti i negozi */
+  chain?: string;
+  /** chi l'ha inserito: l'utente o (in futuro) un'insegna partner per promozioni dirette */
+  source?: 'user' | 'partner';
 };

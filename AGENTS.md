@@ -42,25 +42,37 @@ Docs: https://docs.expo.dev/eas/index.md
 
 ## Progetto: Conto Spesa
 
-App per calcolare il totale della spesa inquadrando il prezzo sull'etichetta, con "linea coupon"
-che mostra quanto manca a ogni buono sconto / obiettivo. Interfaccia e testi in italiano.
+App per calcolare il totale della spesa inquadrando il cartellino (prezzo + nome prodotto), con
+"linea coupon" che mostra quanto manca a ogni buono, buoni con codice a barre da mostrare in cassa,
+storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche utenti poco pratici
+→ testi semplici in italiano, caratteri grandi, pulsanti grandi, niente menu nascosti.
 
 ### Struttura
-- `src/app/` — schermate (Expo Router): `index` carrello, `scan` fotocamera+OCR, `add` inserimento manuale, `coupons` coupon e impostazioni.
-- `src/features/<funzione>/` — logica pura senza UI (testabile): `cart`, `coupons`, `ocr`.
-- `src/components/` — componenti riusabili (`CouponLine`, `ItemEditor`).
-- `src/store/AppStore.tsx` — stato unico (reducer + AsyncStorage). Nuovi dati: campo in `AppState`, azioni nel reducer, alzare `SCHEMA_VERSION` e gestire `migrate()` se cambia la forma salvata.
+- `src/app/(tabs)/` — schede: `index` Spesa, `coupons` Buoni, `history` Storico, `profile` Impostazioni/privacy.
+- `src/app/` — schermate modali: `scan` (fotocamera, OCR, modalità AUTO), `add` (manuale), `store` (negozio),
+  `coupon-edit` (buono guidato: calendario, scansione codice), `coupon-show` (codice a barre in cassa),
+  `onboarding` (primo avvio + consensi), `privacy` (informativa BOZZA).
+- `src/features/<funzione>/` — logica pura testabile: `cart`, `coupons`, `ocr` (prezzo + nome), `barcode`
+  (EAN-13/Code128 verificati contro JsBarcode), `store` (tipologia GDO + insegne), `history`, `consent`, `analytics`.
+- `src/store/reducer.ts` — stato e reducer (senza React Native, testabile). `AppStore.tsx` — provider + salvataggio.
+  Nuovi dati: campo in `AppState`, azione nel reducer, alzare `SCHEMA_VERSION` (ora 2) e gestire `migrate()`.
+- `src/components/` — `ui.tsx` (BigButton, Card, SwitchRow, Choice), `CouponLine`, `ItemEditor`, `BarcodeView`.
 - `tests/run.ts` — test della logica (`npm test`).
+- `.github/workflows/build-apk.yml` — ogni push su main crea l'APK nelle Release del repo GitHub.
 
 ### Regole
 - Importi SEMPRE in centesimi interi (`Cents`), formattazione con `formatEuro`.
-- OCR solo tramite `src/features/ocr/recognizer.ts` (on-device, `expo-text-extractor`). Deve restare opzionale: in Expo Go l'app funziona con inserimento manuale.
+- OCR solo tramite `src/features/ocr/recognizer.ts` (on-device). Deve restare opzionale (Expo Go → inserimento manuale).
+- Privacy: due consensi separati, spenti di default, revocabili; nessun identificativo personale nei record
+  (`analytics/collector.ts`). Revoca = cancellazione immediata della coda. L'invio richiede un backend
+  (`UPLOAD_ENDPOINT` è null): non inviare nulla finché informativa definitiva e backend non sono pronti.
 - Ogni nuova funzione: cartella in `src/features/`, logica pura + test in `tests/run.ts`, poi la schermata.
 - Prima di chiudere un lavoro: `npm run typecheck` e `npm test`.
 
 ### Idee per il futuro (non ancora fatte)
-- Storico spese e statistiche mensili
+- Backend per ricevere le statistiche anonime + dashboard per le insegne GDO
+- Buoni "partner" inviati dalle insegne (campo `source: 'partner'` già previsto nei Coupon)
 - Budget massimo con avviso
-- Lettura codice a barre e nome prodotto
-- Scansione del coupon (codice/QR) dalla fotocamera
+- Lettura codice EAN del prodotto per nome/categoria automatici
 - Lista della spesa condivisa
+- Versione per il Play Store: AAB firmato con chiave propria

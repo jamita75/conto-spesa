@@ -45,12 +45,15 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
 
       - name: Rinomina APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk conto-spesa-v1.0.${{ github.run_number }}.apk
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")-${{ github.run_number }}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          cp android/app/build/outputs/apk/release/app-release.apk conto-spesa-v$VERSION.apk
 
       - name: Pubblica Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "v1.0.${{ github.run_number }}" conto-spesa-v1.0.${{ github.run_number }}.apk \
-            --title "Conto Spesa v1.0.${{ github.run_number }}" \
+          gh release create "v$VERSION" conto-spesa-v$VERSION.apk \
+            --title "Conto Spesa v$VERSION" \
             --notes "APK Android. Apri il file dal telefono e installalo (consenti l'installazione da origini sconosciute)."

@@ -15,14 +15,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ItemEditor } from '../components/ItemEditor';
 import { cartSubtotal } from '../features/cart/types';
+import { extractProductName } from '../features/ocr/nameParser';
 import { extractPriceCandidates, pickConfidentPrice, type PriceCandidate } from '../features/ocr/priceParser';
 import { isOcrAvailable, recognizeText } from '../features/ocr/recognizer';
 import { formatEuro, type Cents } from '../lib/money';
 import { colors, radius, space } from '../lib/theme';
 import { newId, useStore } from '../store/AppStore';
 
-type Phase = { kind: 'camera' } | { kind: 'reading' } | { kind: 'confirm'; candidates: PriceCandidate[] };
-type Toast = { id: string; price: Cents; qty: number };
+type Phase = { kind: 'camera' } | { kind: 'reading' } | { kind: 'confirm'; candidates: PriceCandidate[]; name?: string };
+type Toast = { id: string; price: Cents; qty: number; label?: string };
 
 /** pausa tra una lettura automatica e la successiva */
 const AUTO_INTERVAL_MS = 600;
@@ -66,7 +67,7 @@ export default function ScanScreen() {
       const id = newId();
       dispatch({ type: 'item/add', id, item: { price, qty, label, source: 'scan' } });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showToast({ id, price, qty });
+      showToast({ id, price, qty, label });
     },
     [dispatch, showToast],
   );
@@ -87,7 +88,8 @@ export default function ScanScreen() {
         try {
           const photo = await camera.current.takePictureAsync({ quality: 0.5, shutterSound: false });
           if (!alive || !photo) return;
-          const pick = pickConfidentPrice(extractPriceCandidates(await recognizeText(photo.uri)));
+          const lines = await recognizeText(photo.uri);
+          const pick = pickConfidentPrice(extractPriceCandidates(lines));
           if (!alive) return;
 
           // l'inquadratura è cambiata: lo stesso prezzo si potrà riaggiungere
@@ -101,7 +103,7 @@ export default function ScanScreen() {
             streak.current = { cents: pick.cents, count };
             setAutoStatus('found');
             if (count >= AUTO_STABLE_READS) {
-              addItem(pick.cents, 1);
+              addItem(pick.cents, 1, extractProductName(lines));
               blocked.current = pick.cents;
               streak.current = null;
             }
@@ -155,7 +157,7 @@ export default function ScanScreen() {
       busy.current = true;
       const photo = await camera.current.takePictureAsync({ quality: 0.7, shutterSound: false });
       const lines = await recognizeText(photo.uri);
-      setPhase({ kind: 'confirm', candidates: extractPriceCandidates(lines) });
+      setPhase({ kind: 'confirm', candidates: extractPriceCandidates(lines), name: extractProductName(lines) });
     } catch {
       setPhase({ kind: 'confirm', candidates: [] });
     } finally {
@@ -229,6 +231,11 @@ export default function ScanScreen() {
       {toast ? (
         <View style={[styles.toast, { top: insets.top + 70 }]}>
           <View style={{ flex: 1 }}>
+            {toast.label ? (
+              <Text style={styles.toastName} numberOfLines={1}>
+                {toast.label}
+              </Text>
+            ) : null}
             <Text style={styles.toastText}>
               +{formatEuro(toast.price * toast.qty)}
               {toast.qty > 1 ? ` (${toast.qty}×)` : ''}
@@ -267,8 +274,9 @@ export default function ScanScreen() {
               </Text>
             ) : null}
             <ItemEditor
-              key={phase.candidates.map((c) => c.cents).join('-')}
+              key={phase.candidates.map((c) => c.cents).join('-') + (phase.name ?? '')}
               candidates={phase.candidates}
+              initialLabel={phase.name}
               confirmLabel="Aggiungi e continua"
               onCancel={() => setPhase({ kind: 'camera' })}
               onConfirm={({ price, qty, label }) => {
@@ -322,6 +330,7 @@ const styles = StyleSheet.create({
     paddingRight: space(2),
   },
   toastText: { fontWeight: '800', color: colors.primaryDark, fontSize: 17 },
+  toastName: { fontWeight: '700', color: colors.text, fontSize: 14 },
   toastSub: { color: colors.muted, fontSize: 12 },
   toastBtn: { backgroundColor: colors.primarySoft, borderRadius: radius.sm, paddingVertical: space(2), paddingHorizontal: space(3) },
   toastUndo: { backgroundColor: '#FBE4E2' },

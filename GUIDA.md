@@ -1,5 +1,13 @@
 # Conto Spesa — guida rapida
 
+## Novità versione 1.1
+- 4 schede in basso: **Spesa**, **Buoni**, **Storico**, **Profilo**. Caratteri e pulsanti più grandi.
+- Il cartellino viene letto anche per il **nome del prodotto** (correggibile).
+- **Negozio**: in alto nella Spesa scegli Alimentare / Non alimentare e l'insegna. I buoni legati a un'insegna compaiono solo lì.
+- **Spesa finita** salva la spesa nello **Storico**: totale del mese, alimentare vs non alimentare, prodotti di ogni spesa.
+- **Buoni guidati**: «Sconto di __ se spendi almeno __ €», scelte rapide, scadenza dal **calendario**, codice scritto o **scansionato** → diventa un **codice a barre**. «Mostra in cassa» apre il codice a tutto schermo con luminosità al massimo.
+- **Privacy**: al primo avvio due consensi facoltativi (statistiche anonime / condivisione con negozi partner), modificabili dal Profilo. Per ora i dati restano sul telefono: l'invio arriverà con il server.
+
 ## Cosa fa
 - **Modalità AUTO** (attiva di base): punti il cartellino e basta. Quando il prezzo è chiaro lo aggiunge da solo con una vibrazione; compaiono «+1» (stesso prodotto un'altra volta) e «Annulla». Lo stesso cartellino non viene contato due volte finché non sposti il telefono. Se il prezzo è dubbio non aggiunge nulla: scatti e scegli tu.
 - **Inquadra prezzo** (scatto manuale): scatti all'etichetta, l'app legge i prezzi e tu tocchi quello giusto (il prezzo al kg/litro è segnalato e non viene scelto in automatico). Dopo ogni prodotto resta in modalità scansione.

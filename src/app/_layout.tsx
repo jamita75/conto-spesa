@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { AppStoreProvider } from '../store/AppStore';
 import { colors } from '../lib/theme';
+import { AppStoreProvider } from '../store/AppStore';
 
 export default function RootLayout() {
   return (
@@ -12,13 +12,18 @@ export default function RootLayout() {
           headerStyle: { backgroundColor: colors.bg },
           headerShadowVisible: false,
           headerTintColor: colors.text,
+          headerTitleStyle: { fontSize: 20, fontWeight: '800' },
           contentStyle: { backgroundColor: colors.bg },
         }}
       >
-        <Stack.Screen name="index" options={{ title: 'Conto Spesa' }} />
-        <Stack.Screen name="coupons" options={{ title: 'Coupon e obiettivi' }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="add" options={{ title: 'Aggiungi prodotto', presentation: 'modal' }} />
         <Stack.Screen name="scan" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="store" options={{ title: 'Dove fai la spesa?', presentation: 'modal' }} />
+        <Stack.Screen name="coupon-edit" options={{ title: 'Buono sconto', presentation: 'modal' }} />
+        <Stack.Screen name="coupon-show" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="privacy" options={{ title: 'Informativa privacy' }} />
       </Stack>
     </AppStoreProvider>
   );

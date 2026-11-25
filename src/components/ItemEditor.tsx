@@ -6,6 +6,8 @@ import { colors, radius, space } from '../lib/theme';
 
 type Props = {
   initialPrice?: Cents;
+  /** nome letto dal cartellino (modificabile) */
+  initialLabel?: string;
   candidates?: PriceCandidate[];
   confirmLabel?: string;
   onConfirm: (data: { price: Cents; qty: number; label?: string }) => void;
@@ -13,11 +15,11 @@ type Props = {
 };
 
 /** Pannello per confermare/modificare prezzo, quantità e nome prodotto. */
-export function ItemEditor({ initialPrice, candidates = [], confirmLabel = 'Aggiungi', onConfirm, onCancel }: Props) {
+export function ItemEditor({ initialPrice, initialLabel, candidates = [], confirmLabel = 'Aggiungi', onConfirm, onCancel }: Props) {
   const first = initialPrice ?? candidates.find((c) => !c.isUnitPrice)?.cents ?? candidates[0]?.cents;
   const [priceText, setPriceText] = useState(first != null ? centsToInput(first) : '');
   const [qty, setQty] = useState(1);
-  const [label, setLabel] = useState('');
+  const [label, setLabel] = useState(initialLabel ?? '');
   const price = parseEuroInput(priceText);
   const valid = price != null && price > 0;
 
@@ -72,7 +74,7 @@ export function ItemEditor({ initialPrice, candidates = [], confirmLabel = 'Aggi
           </View>
         </View>
         <View style={{ flex: 1.4 }}>
-          <Text style={styles.label}>Nome (facoltativo)</Text>
+          <Text style={styles.label}>{initialLabel ? 'Nome letto (correggi se serve)' : 'Nome (facoltativo)'}</Text>
           <TextInput value={label} onChangeText={setLabel} placeholder="es. Latte" style={styles.input} />
         </View>
       </View>
