@@ -12,7 +12,7 @@ import { colors, font, space } from '../lib/theme';
 const SECTIONS: { title: string; text: string }[] = [
   {
     title: 'Chi tratta i dati',
-    text: 'Titolare del trattamento: [ragione sociale, indirizzo, email per la privacy — da completare]. L\'informativa completa è pubblicata anche sul sito creaitivity.it.',
+    text: 'Titolare del trattamento: Gian Maria Colotto. Contatto per la privacy: postmaster@creaitivity.it. Informativa completa: www.creaitivity.it/privacy-conto-spesa',
   },
   {
     title: 'Cosa resta sul tuo telefono',
@@ -44,7 +44,7 @@ export default function PrivacyScreen() {
   const insets = useSafeAreaInsets();
   return (
     <ScrollView contentContainerStyle={{ padding: space(5), paddingBottom: space(12) + insets.bottom }}>
-      <Text style={styles.draft}>Bozza in revisione · versione {PRIVACY_POLICY_VERSION}</Text>
+      <Text style={styles.draft}>Versione {PRIVACY_POLICY_VERSION}</Text>
       {SECTIONS.map((s) => (
         <React.Fragment key={s.title}>
           <Text style={styles.h}>{s.title}</Text>
@@ -56,7 +56,7 @@ export default function PrivacyScreen() {
 }
 
 const styles = StyleSheet.create({
-  draft: { fontSize: font.small, color: colors.danger, fontWeight: '700' },
+  draft: { fontSize: font.small, color: colors.muted, fontWeight: '700' },
   h: { fontSize: font.big, fontWeight: '800', color: colors.text, marginTop: space(5) },
   p: { fontSize: font.body, color: colors.text, marginTop: space(2), lineHeight: 25 },
 });

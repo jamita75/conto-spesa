@@ -20,8 +20,8 @@ Bozza tecnica preparata durante lo sviluppo: non è un parere legale.
 | Dati in UE | Server WordPress del titolare (hosting in Italia) |
 
 ## Da fare (titolare / consulente)
-1. **Titolare del trattamento**: indicare il soggetto giuridico (ragione sociale, sede, P.IVA) e l'email privacy in Bacheca → Conto Spesa. Se Creaitivity non è una società, scegliere chi è il titolare.
-2. **Pagina informativa pubblica**: creare la pagina con lo shortcode e inserirne il link nella scheda Play Store.
+1. ✅ **Titolare**: Gian Maria Colotto, postmaster@creaitivity.it (valutare se aggiungere indirizzo/P.IVA).
+2. ✅ **Pagina informativa pubblica**: https://www.creaitivity.it/privacy-conto-spesa/ — da inserire nella scheda Play Store.
 3. **Registro dei trattamenti** (art. 30 GDPR): aggiungere «Statistiche d'acquisto app Conto Spesa».
 4. **Valutazione d'impatto (DPIA, art. 35)**: le abitudini d'acquisto analizzate nel tempo possono rientrare nei casi che la richiedono; farla valutare.
 5. **Hosting**: verificare che il contratto con il fornitore includa l'accordo sul trattamento dei dati (art. 28) e quanto conserva i log; ricordare che i backup contengono le tabelle `cs_records` e `cs_items`.
