@@ -56,7 +56,7 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
   (EAN-13/Code128 verificati contro JsBarcode), `store` (tipologia GDO + insegne), `history`, `consent`, `analytics`,
   `catalog` (reparti con parole chiave, marchi del distributore/private label: elenchi da ampliare).
 - `src/store/reducer.ts` — stato e reducer (senza React Native, testabile). `AppStore.tsx` — provider + salvataggio.
-  Nuovi dati: campo in `AppState`, azione nel reducer, alzare `SCHEMA_VERSION` (ora 3) e gestire `migrate()`.
+  Nuovi dati: campo in `AppState`, azione nel reducer, alzare `SCHEMA_VERSION` (ora 4) e gestire `migrate()`.
 - `src/components/` — `ui.tsx` (BigButton, Card, SwitchRow, Choice), `CouponLine`, `ItemEditor`, `BarcodeView`.
 - `tests/run.ts` — test della logica (`npm test`).
 - `.github/workflows/build-apk.yml` — ogni push su main crea l'APK nelle Release del repo GitHub.
@@ -64,9 +64,12 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
 ### Regole
 - Importi SEMPRE in centesimi interi (`Cents`), formattazione con `formatEuro`.
 - OCR solo tramite `src/features/ocr/recognizer.ts` (on-device). Deve restare opzionale (Expo Go → inserimento manuale).
-- Privacy: due consensi separati, spenti di default, revocabili; nessun identificativo personale nei record
-  (`analytics/collector.ts`). Revoca = cancellazione immediata della coda. L'invio richiede un backend
-  (`UPLOAD_ENDPOINT` è null): non inviare nulla finché informativa definitiva e backend non sono pronti.
+- Privacy: due consensi separati, spenti di default, revocabili. Al primo consenso nasce un codice casuale
+  (`pid`, pseudonimo = dato personale). Revoca totale / «Cancella tutto» → `pendingOps` forget verso il server.
+  Ogni modifica ai consensi passa da `consentAction()` (store/actions.ts). Invio: `store/useServerSync.ts` +
+  `features/analytics/uploader.ts` → plugin WordPress in `server/wordpress/conto-spesa-stats/` (test: `php /tmp/...`
+  harness non incluso; `php -l` obbligatorio). Se cambia cosa si raccoglie: nuova versione informativa + riconferma.
+  Checklist legale: `docs/PRIVACY-CHECKLIST.md`.
 - Buoni: ambito `scope` (tutta la spesa / marca del negozio / altre marche / reparti), `startsOn` + `expiresOn`.
   La spesa minima di un buono con ambito conta solo i prodotti del suo ambito (`eligibleSubtotal`).
 - Prezzi: il parser gestisce cartellini da scaffale ed etichette del fresco pesato (peso, €/kg, «da pagare»).
@@ -77,7 +80,6 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
 - Prima di chiudere un lavoro: `npm run typecheck` e `npm test`.
 
 ### Idee per il futuro (non ancora fatte)
-- Backend per ricevere le statistiche anonime + dashboard per le insegne GDO
 - Budget massimo con avviso
 - Lettura codice EAN del prodotto per nome/categoria automatici
 - Lista della spesa condivisa

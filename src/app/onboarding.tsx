@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { consentAction } from '../store/actions';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -49,7 +50,7 @@ export default function Onboarding() {
 
           <Card style={{ marginTop: space(6) }}>
             <Text style={styles.listTitle}>✓ Cosa condividi</Text>
-            <Text style={styles.listText}>Prodotti, prezzi, reparto, tipo di negozio e giorno della spesa.</Text>
+            <Text style={styles.listText}>Prodotti, prezzi, reparto, tipo di negozio e giorno della spesa, legati a un codice casuale che non dice chi sei.</Text>
             <Text style={[styles.listTitle, { marginTop: space(3) }]}>✕ Cosa non condividi mai</Text>
             <Text style={styles.listText}>Nome, numero di telefono, posizione, foto.</Text>
             <Text style={[styles.listText, { marginTop: space(3) }]}>Puoi cambiare idea quando vuoi dal Profilo.</Text>
@@ -62,7 +63,7 @@ export default function Onboarding() {
                   title="Statistiche anonime"
                   help="Ci aiutano a migliorare l'app."
                   value={state.consent.stats}
-                  onChange={(v) => dispatch({ type: 'consent/set', patch: { stats: v } })}
+                  onChange={(v) => dispatch(consentAction({ stats: v }))}
                 />
               </Card>
               <Card>
@@ -70,7 +71,7 @@ export default function Onboarding() {
                   title="Condividi con i negozi partner"
                   help="Statistiche anonime e aggregate condivise con catene della distribuzione, anche a pagamento, per offerte e promozioni."
                   value={state.consent.partners}
-                  onChange={(v) => dispatch({ type: 'consent/set', patch: { partners: v } })}
+                  onChange={(v) => dispatch(consentAction({ partners: v }))}
                 />
               </Card>
               <BigButton label="Conferma le mie scelte" onPress={finish} style={{ marginTop: space(3) }} />
@@ -81,7 +82,7 @@ export default function Onboarding() {
               <BigButton
                 label={isFounderEligible() ? 'Sblocca e diventa Socio fondatore' : 'Sblocca le offerte'}
                 onPress={() => {
-                  dispatch({ type: 'consent/set', patch: { stats: true, partners: true } });
+                  dispatch(consentAction({ stats: true, partners: true }));
                   finish();
                 }}
                 style={{ marginTop: space(2) }}
@@ -90,11 +91,12 @@ export default function Onboarding() {
                 label="Continua senza condividere"
                 variant="ghost"
                 onPress={() => {
-                  dispatch({ type: 'consent/set', patch: { stats: false, partners: false } });
+                  dispatch(consentAction({ stats: false, partners: false }));
                   finish();
                 }}
                 style={{ marginTop: space(3) }}
               />
+              <Text style={styles.age}>Accettando confermi di avere almeno 14 anni.</Text>
               <Text style={styles.link} onPress={() => setCustom(true)}>
                 Scegli tu cosa condividere
               </Text>
@@ -133,6 +135,7 @@ const styles = StyleSheet.create({
   stepNText: { color: '#fff', fontWeight: '800', fontSize: font.big },
   stepTitle: { fontSize: font.big, fontWeight: '800', color: colors.text },
   stepText: { fontSize: font.body, color: colors.muted, marginTop: 2, lineHeight: 23 },
+  age: { fontSize: 13, color: colors.muted, textAlign: 'center', marginTop: space(3) },
   listTitle: { fontSize: font.body, fontWeight: '800', color: colors.text },
   listText: { fontSize: font.body, color: colors.muted, marginTop: 2, lineHeight: 23 },
   link: { fontSize: font.body, color: colors.primaryDark, fontWeight: '700', textAlign: 'center', marginTop: space(5), textDecorationLine: 'underline' },

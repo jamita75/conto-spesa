@@ -1,5 +1,19 @@
 # Conto Spesa — guida rapida
 
+## Novità versione 1.4 — raccolta dati a norma
+- Al consenso nasce un **codice anonimo casuale** che permette di seguire le abitudini nel tempo senza sapere chi è l'utente.
+- Le spese di chi ha acconsentito vengono inviate al tuo sito; se il server non risponde restano in coda e partono dopo.
+- Profilo: **Scarica i miei dati**; la revoca o «Cancella tutti i miei dati» cancellano anche sul server.
+- Chi aveva già acconsentito con una versione precedente rivede la schermata di benvenuto per riconfermare.
+
+### Installare il server di raccolta (una volta)
+1. WordPress di creaitivity.it → **Plugin → Aggiungi nuovo → Carica plugin** → scegli `conto-spesa-stats.zip` → Installa → **Attiva**.
+2. Menu **Conto Spesa** → compila Titolare ed Email privacy → Salva.
+3. **Pagine → Aggiungi**: titolo «Privacy Conto Spesa», testo `[contospesa_informativa]` → Pubblica (link da mettere nel Play Store).
+4. Dashboard: menu **Conto Spesa** (utenti, scontrino medio, reparti, insegne, giorni, fedeltà, prodotti). Report per i partner: pulsante **Scarica report aggregato (CSV)**.
+
+Checklist legale da far vedere al consulente: `docs/PRIVACY-CHECKLIST.md`.
+
 ## Novità versione 1.3 — offerte riservate
 - Al primo avvio: **«Sblocca e diventa Socio fondatore»** (accetta la condivisione anonima con un tocco) oppure «Continua senza condividere».
 - Scheda Buoni: sezione **🎁 Offerte riservate**, chiusa col 🔒 per chi non condivide; si sblocca con un tocco.

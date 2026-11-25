@@ -3,7 +3,7 @@
  * revocabili in qualsiasi momento dalla scheda "Profilo".
  * Ogni modifica registra data e versione dell'informativa accettata.
  */
-export const PRIVACY_POLICY_VERSION = '2026-11-25-bozza';
+export const PRIVACY_POLICY_VERSION = '2026-11-25-v2-bozza';
 
 export type Consent = {
   /** statistiche anonime e aggregate per migliorare l'app */

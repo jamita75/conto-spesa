@@ -1,7 +1,9 @@
 import Constants from 'expo-constants';
 import { router } from 'expo-router';
+import { consentAction } from '../../store/actions';
 import React from 'react';
-import { Alert, ScrollView, Text } from 'react-native';
+import { Alert, ScrollView, Share, Text } from 'react-native';
+import { exportFromServer } from '../../features/analytics/uploader';
 import { BigButton, Card, SectionTitle, SwitchRow, styles as ui } from '../../components/ui';
 import { colors, font, space } from '../../lib/theme';
 import { useStore } from '../../store/AppStore';
@@ -13,7 +15,7 @@ export default function ProfileScreen() {
   const wipe = () =>
     Alert.alert(
       'Cancellare tutti i dati?',
-      'Verranno eliminati carrello, buoni, storico delle spese e statistiche in attesa. Non si può annullare.',
+      'Verranno eliminati carrello, buoni, storico delle spese e statistiche in attesa, e chiederemo al server di cancellare i dati collegati al tuo codice. Non si può annullare.',
       [
         { text: 'Annulla', style: 'cancel' },
         { text: 'Cancella tutto', style: 'destructive', onPress: () => dispatch({ type: 'data/wipe' }) },
@@ -57,7 +59,7 @@ export default function ProfileScreen() {
           title="Statistiche anonime"
           help="Prodotti, prezzi e tipo di negozio, senza dati che ti identificano. Ci aiutano a migliorare l'app."
           value={state.consent.stats}
-          onChange={(v) => dispatch({ type: 'consent/set', patch: { stats: v } })}
+          onChange={(v) => dispatch(consentAction({ stats: v }))}
         />
       </Card>
       <Card>
@@ -65,12 +67,33 @@ export default function ProfileScreen() {
           title="Condividi con i negozi partner"
           help="Statistiche anonime e aggregate condivise con catene della distribuzione, anche a pagamento."
           value={state.consent.partners}
-          onChange={(v) => dispatch({ type: 'consent/set', patch: { partners: v } })}
+          onChange={(v) => dispatch(consentAction({ partners: v }))}
         />
       </Card>
       <Text style={ui.help}>
         {consentDate ? `Ultima modifica: ${consentDate}. ` : ''}Puoi cambiare idea quando vuoi: se spegni tutto, i dati non ancora inviati vengono cancellati subito.
       </Text>
+      {state.pid ? (
+        <Card>
+          <Text style={{ fontSize: font.body, fontWeight: '800', color: colors.text }}>Il tuo codice anonimo</Text>
+          <Text style={ui.help}>
+            {state.pid.slice(0, 8)}… · creato a caso sul telefono, non dice chi sei. Se revochi i consensi viene eliminato insieme ai dati sul server.
+          </Text>
+          <BigButton
+            label="Scarica i miei dati"
+            variant="ghost"
+            style={{ marginTop: space(3) }}
+            onPress={async () => {
+              const data = await exportFromServer(state.pid!);
+              if (!data) {
+                Alert.alert('Non disponibile', 'Il server non risponde. Riprova più tardi.');
+                return;
+              }
+              await Share.share({ title: 'I miei dati Conto Spesa', message: JSON.stringify(data, null, 2) });
+            }}
+          />
+        </Card>
+      ) : null}
       <BigButton label="Leggi l'informativa privacy" variant="ghost" onPress={() => router.push('/privacy')} style={{ marginTop: space(3) }} />
       <BigButton label="Cancella tutti i miei dati" variant="danger" onPress={wipe} style={{ marginTop: space(3) }} />
 

@@ -234,7 +234,7 @@ t('descrizione ambito', () => {
 t('migrazione v1 → v2 conserva carrello e buoni', () => {
   const v1 = { schema: 1, items: [{ id: 'i', price: 100, qty: 2, source: 'manual', createdAt: 0 }], coupons: [cp(500, 50)], settings: { stackCoupons: true } };
   const s = migrate(v1);
-  assert.equal(s.schema, 3);
+  assert.equal(s.schema, 4);
   assert.equal(s.items.length, 1);
   assert.equal(s.coupons.length, 1);
   assert.equal(s.settings.stackCoupons, true);
@@ -300,7 +300,58 @@ t('consenso partner → Socio fondatore, prendi offerta una sola volta', () => {
 });
 t('migrazione v2 → v3 aggiunge le offerte', () => {
   const s = migrate({ schema: 2, onboarded: true, items: [], coupons: [], history: [], settings: {}, consent: { stats: true, partners: false }, analyticsQueue: [] });
-  assert.deepEqual([s.schema, s.offers.length, s.consent.stats], [3, 0, true]);
+  assert.deepEqual([s.schema, s.offers.length, s.consent.stats, s.onboarded], [4, 0, false, false]);
+});
+
+// --- codice pseudonimo, invio e diritti ---
+const PID = '3b1f2c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d';
+t('codice: nasce col primo consenso e resta lo stesso', () => {
+  let s = reducer(initialState, { type: 'consent/set', patch: { stats: true }, newPid: PID });
+  assert.equal(s.pid, PID);
+  s = reducer(s, { type: 'consent/set', patch: { partners: true }, newPid: 'altro' });
+  assert.equal(s.pid, PID);
+});
+t('codice: nessun consenso → nessun codice', () => {
+  const s = reducer(initialState, { type: 'consent/set', patch: { stats: false, partners: false }, newPid: PID });
+  assert.equal(s.pid, undefined);
+});
+t('revoca totale: codice eliminato, cancellazione chiesta al server, coda svuotata', () => {
+  let s = reducer(initialState, { type: 'consent/set', patch: { stats: true, partners: true }, newPid: PID });
+  s = reducer(s, { type: 'item/add', item: { price: 100, qty: 1, source: 'manual' } });
+  s = reducer(s, { type: 'session/finish', id: 'sess-1' });
+  assert.equal(s.analyticsQueue[0].rid, 'sess-1');
+  s = reducer(s, { type: 'consent/set', patch: { stats: false, partners: false } });
+  assert.equal(s.pid, undefined);
+  assert.deepEqual(s.pendingOps, [{ type: 'forget', pid: PID }]);
+  assert.equal(s.analyticsQueue.length, 0);
+  s = reducer(s, { type: 'ops/done', op: { type: 'forget', pid: PID } });
+  assert.equal(s.pendingOps.length, 0);
+});
+t('revoca solo partner: il server toglie le spese dai report partner', () => {
+  let s = reducer(initialState, { type: 'consent/set', patch: { stats: true, partners: true }, newPid: PID });
+  s = reducer(s, { type: 'consent/set', patch: { partners: false } });
+  assert.equal(s.pid, PID);
+  assert.deepEqual(s.pendingOps, [{ type: 'partnersOff', pid: PID }]);
+});
+t('cancella tutti i dati: anche sul server', () => {
+  let s = reducer(initialState, { type: 'consent/set', patch: { stats: true }, newPid: PID });
+  s = reducer(s, { type: 'data/wipe' });
+  assert.equal(s.pid, undefined);
+  assert.deepEqual(s.pendingOps, [{ type: 'forget', pid: PID }]);
+});
+t('invio confermato toglie dalla coda solo le spese ricevute', () => {
+  let s = reducer(initialState, { type: 'consent/set', patch: { stats: true }, newPid: PID });
+  for (const id of ['a', 'b']) {
+    s = reducer(s, { type: 'item/add', item: { price: 100, qty: 1, source: 'manual' } });
+    s = reducer(s, { type: 'session/finish', id });
+  }
+  s = reducer(s, { type: 'analytics/sent', rids: ['a'] });
+  assert.deepEqual(s.analyticsQueue.map((r) => r.rid), ['b']);
+});
+t('migrazione v3 → v4', () => {
+  const s = migrate({ schema: 3, onboarded: true, items: [], coupons: [], history: [], settings: {}, consent: { stats: true, partners: true }, analyticsQueue: [{ v: 1 }], offers: [] });
+  assert.deepEqual([s.schema, s.pendingOps.length, s.analyticsQueue.length, s.pid], [4, 0, 0, undefined]);
+  assert.deepEqual([s.consent.stats, s.consent.partners, s.onboarded], [false, false, false]); // riconferma con nuova informativa
 });
 
 console.log(`\n${passed} test superati`);

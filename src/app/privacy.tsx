@@ -12,27 +12,31 @@ import { colors, font, space } from '../lib/theme';
 const SECTIONS: { title: string; text: string }[] = [
   {
     title: 'Chi tratta i dati',
-    text: 'Titolare del trattamento: [ragione sociale, indirizzo, email di contatto — da completare].',
+    text: 'Titolare del trattamento: [ragione sociale, indirizzo, email per la privacy — da completare]. L\'informativa completa è pubblicata anche sul sito creaitivity.it.',
   },
   {
     title: 'Cosa resta sul tuo telefono',
-    text: 'Carrello, buoni sconto, codici dei buoni e storico delle spese sono salvati solo sul tuo telefono. Le foto dei cartellini vengono lette sul telefono e non vengono inviate né conservate. Puoi cancellare tutto da Profilo → «Cancella tutti i miei dati».',
+    text: 'Carrello, buoni, codici dei buoni e storico delle spese restano solo sul telefono. Le foto dei cartellini vengono lette sul telefono e non vengono né inviate né conservate.',
   },
   {
-    title: 'Statistiche anonime (facoltativo)',
-    text: 'Solo se attivi il consenso, a fine spesa viene preparato un riepilogo anonimo: giorno, tipo di negozio, insegna (solo se scelta dall\'elenco), nomi e prezzi dei prodotti, totale, sconto. Non contiene nome, numero di telefono, identificativo del dispositivo o posizione. Base giuridica: consenso (art. 6.1.a GDPR).',
+    title: 'Statistiche d\'acquisto (solo con il tuo consenso)',
+    text: 'Se accetti, a fine spesa l\'app invia: giorno e giorno della settimana, tipo di negozio, insegna (se scelta dall\'elenco), nome letto, reparto, prezzo e quantità dei prodotti, «marca del negozio», totale, sconto e numero di buoni usati. I dati sono collegati a un codice casuale creato sul telefono al momento del consenso: serve a capire le abitudini nel tempo senza sapere chi sei. Non raccogliamo nome, telefono, email, posizione, foto o identificativi del dispositivo. Il codice è un dato pseudonimo e quindi un dato personale protetto dal GDPR. Base giuridica: consenso (art. 6.1.a GDPR), facoltativo: l\'app funziona completamente anche senza.',
   },
   {
-    title: 'Condivisione con i negozi partner (facoltativo)',
-    text: 'Solo se attivi questo secondo consenso, separato dal primo, le statistiche anonime e aggregate possono essere condivise, anche a titolo oneroso, con aziende della distribuzione organizzata per analisi di mercato e promozioni. Non vengono mai cedute informazioni che ti identificano.',
+    title: 'Negozi partner (secondo consenso, separato)',
+    text: 'Solo se lo accetti, le statistiche possono essere usate per report ai negozi partner, anche a pagamento. I partner ricevono solo dati aggregati (per insegna e reparto) che riguardano almeno 10 persone diverse: mai il codice, mai le singole spese. In cambio puoi ricevere nell\'app le loro offerte riservate.',
+  },
+  {
+    title: 'Dove e per quanto',
+    text: 'Sul server del titolare in Italia, per 24 mesi, poi cancellazione automatica. Il fornitore di hosting è responsabile del trattamento. Come ogni sito, il server può annotare l\'indirizzo di rete nei registri tecnici del fornitore; il sistema di raccolta non lo salva.',
   },
   {
     title: 'Offerte riservate',
-    text: 'Con il consenso ai negozi partner, all\'apertura l\'app scarica l\'elenco delle offerte da un file pubblico (GitHub). Per farlo il telefono si collega a quel servizio, che come ogni sito vede l\'indirizzo di rete; l\'app non invia altri dati. Lo stato di «Socio fondatore» resta solo sul telefono.',
+    text: 'Con il consenso ai partner, all\'apertura l\'app scarica l\'elenco delle offerte da un file pubblico su GitHub, collegandosi a quel servizio come a un normale sito. Lo stato di «Socio fondatore» resta sul telefono.',
   },
   {
     title: 'I tuoi diritti',
-    text: 'Puoi revocare i consensi in qualsiasi momento da Profilo, senza conseguenze sull\'uso dell\'app: i dati non ancora inviati vengono cancellati subito. Puoi chiedere accesso, rettifica, cancellazione e reclamo al Garante per la protezione dei dati personali.',
+    text: 'Da Profilo puoi in ogni momento: revocare i consensi (il codice viene eliminato e chiediamo al server di cancellare i dati collegati), scaricare i tuoi dati, cancellare tutto. Puoi esercitare i diritti di accesso, rettifica, cancellazione, limitazione, portabilità e opposizione scrivendo al titolare, e proporre reclamo al Garante per la protezione dei dati personali. Il servizio di condivisione è riservato a chi ha almeno 14 anni.',
   },
 ];
 

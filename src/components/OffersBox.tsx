@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import { consentAction } from '../store/actions';
 import React from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { describeCoupon, describeScope } from '../features/coupons/couponLogic';
@@ -24,13 +25,13 @@ export function OffersBox() {
         onPress={() =>
           Alert.alert(
             'Sbloccare le offerte riservate?',
-            'Condividi in forma anonima cosa compri (mai nome, telefono o posizione) con i negozi partner. In cambio ricevi qui i loro buoni sconto riservati. Puoi smettere quando vuoi dal Profilo.',
+            'Condividi in forma anonima cosa compri (mai nome, telefono o posizione) con i negozi partner. In cambio ricevi qui i loro buoni sconto riservati. Puoi smettere quando vuoi dal Profilo. Confermi di avere almeno 14 anni.',
             [
               { text: 'Non ora', style: 'cancel' },
               {
                 text: 'Sblocca',
                 onPress: () => {
-                  dispatch({ type: 'consent/set', patch: { stats: true, partners: true } });
+                  dispatch(consentAction({ stats: true, partners: true }));
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 },
               },

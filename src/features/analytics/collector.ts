@@ -2,18 +2,17 @@ import type { Consent } from '../consent/types';
 import type { ShoppingSession } from '../history/types';
 
 /**
- * Record ANONIMO di una spesa, preparato solo se l'utente ha dato il consenso.
- * Volutamente NON contiene: identificativo del telefono o dell'utente, posizione,
+ * Record di una spesa, preparato solo se l'utente ha dato il consenso.
+ * Volutamente NON contiene: nome, telefono, email, identificativi del dispositivo, posizione,
  * orario preciso (solo giorno), nome libero del negozio se scritto a mano.
- *
- * L'invio richiede un server (non ancora presente): finché UPLOAD_ENDPOINT è null
- * i record restano in coda sul telefono e vengono cancellati se il consenso viene revocato.
+ * L'invio (uploader.ts) lo collega al codice casuale (pseudonimo) del telefono.
  */
-export const UPLOAD_ENDPOINT: string | null = null;
 export const QUEUE_LIMIT = 300;
 
 export type AnonymousPurchase = {
   v: 1;
+  /** id della spesa sul telefono: evita doppioni se l'invio viene ripetuto */
+  rid: string;
   day: string; // yyyy-mm-dd
   weekday: number; // 0 = domenica
   storeType?: 'food' | 'nonfood';
@@ -35,6 +34,7 @@ export function buildAnonymousRecord(
   const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   return {
     v: 1,
+    rid: s.id,
     day,
     weekday: d.getDay(),
     storeType: s.store?.type,

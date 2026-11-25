@@ -37,9 +37,15 @@ export type AppState = {
   /** offerte dei negozi partner lette dal file online (copia locale) */
   offers: PartnerOffer[];
   offersFetchedAt?: number;
+  /** codice casuale (pseudonimo) del telefono, esiste solo finché c'è almeno un consenso */
+  pid?: string;
+  /** richieste al server ancora da inviare (cancellazione / revoca partner) */
+  pendingOps: ServerOp[];
 };
 
-export const SCHEMA_VERSION = 3;
+export type ServerOp = { type: 'forget' | 'partnersOff'; pid: string };
+
+export const SCHEMA_VERSION = 4;
 export const STORAGE_KEY = 'conto-spesa/state';
 const HISTORY_LIMIT = 500;
 
@@ -53,6 +59,7 @@ export const initialState: AppState = {
   consent: NO_CONSENT,
   analyticsQueue: [],
   offers: [],
+  pendingOps: [],
 };
 
 export type Action =
@@ -69,10 +76,13 @@ export type Action =
   | { type: 'coupon/update'; id: string; patch: Partial<Omit<Coupon, 'id'>> }
   | { type: 'coupon/remove'; id: string }
   | { type: 'settings/update'; patch: Partial<Settings> }
-  | { type: 'consent/set'; patch: Partial<Pick<Consent, 'stats' | 'partners'>> }
+  /** newPid: codice casuale generato dall'interfaccia, usato solo se serve crearne uno */
+  | { type: 'consent/set'; patch: Partial<Pick<Consent, 'stats' | 'partners'>>; newPid?: string }
   | { type: 'data/wipe' }
   | { type: 'offers/set'; offers: PartnerOffer[] }
-  | { type: 'offer/claim'; offer: PartnerOffer };
+  | { type: 'offer/claim'; offer: PartnerOffer }
+  | { type: 'analytics/sent'; rids: string[] }
+  | { type: 'ops/done'; op: ServerOp };
 
 export const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -151,17 +161,44 @@ export function reducer(state: AppState, action: Action): AppState {
       // primo consenso ai partner entro la data della promozione → Socio fondatore (resta per sempre)
       const founderSince =
         state.founderSince ?? (consent.partners && isFounderEligible() ? Date.now() : undefined);
+      // codice pseudonimo: nasce col primo consenso, alla revoca totale si chiede al server di cancellare tutto
+      let pid = state.pid;
+      let pendingOps = state.pendingOps;
+      if (revoked && pid) {
+        pendingOps = [...pendingOps.filter((o) => o.pid !== pid), { type: 'forget', pid }];
+        pid = undefined;
+      } else if (!revoked && !pid && action.newPid) {
+        pid = action.newPid;
+      } else if (!revoked && pid && state.consent.partners && !consent.partners) {
+        pendingOps = [...pendingOps, { type: 'partnersOff', pid }];
+      }
       return {
         ...state,
         consent,
         founderSince,
+        pid,
+        pendingOps,
         analyticsQueue: revoked
           ? []
           : state.analyticsQueue.map((r) => ({ ...r, shareWithPartners: r.shareWithPartners && consent.partners })),
       };
     }
     case 'data/wipe':
-      return { ...initialState, onboarded: true };
+      // anche i dati sul server: la richiesta di cancellazione sopravvive alla pulizia
+      return {
+        ...initialState,
+        onboarded: true,
+        pendingOps: state.pid ? [...state.pendingOps, { type: 'forget', pid: state.pid }] : state.pendingOps,
+      };
+    case 'analytics/sent': {
+      const sent = new Set(action.rids);
+      return { ...state, analyticsQueue: state.analyticsQueue.filter((r) => !sent.has(r.rid)) };
+    }
+    case 'ops/done':
+      return {
+        ...state,
+        pendingOps: state.pendingOps.filter((o) => !(o.type === action.op.type && o.pid === action.op.pid)),
+      };
     case 'offers/set':
       return { ...state, offers: action.offers, offersFetchedAt: Date.now() };
     case 'offer/claim':
@@ -176,6 +213,13 @@ export function migrate(saved: any): AppState {
   if (!saved || typeof saved !== 'object') return initialState;
   const from = Number(saved.schema ?? 1);
   let s = { ...saved };
+  if (from < 4) {
+    // i record in coda creati prima del codice pseudonimo non hanno l'id spesa: si scartano
+    s = { ...s, pendingOps: s.pendingOps ?? [], analyticsQueue: [] };
+    // il codice pseudonimo è un trattamento nuovo: chi aveva già acconsentito deve riconfermare
+    // con la nuova informativa → consensi azzerati e schermata di benvenuto di nuovo
+    if (s.consent?.stats || s.consent?.partners) s = { ...s, consent: NO_CONSENT, onboarded: false };
+  }
   if (from < 3) {
     s = { ...s, offers: s.offers ?? [] };
   }
