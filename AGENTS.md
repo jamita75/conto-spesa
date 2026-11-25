@@ -39,3 +39,28 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Progetto: Conto Spesa
+
+App per calcolare il totale della spesa inquadrando il prezzo sull'etichetta, con "linea coupon"
+che mostra quanto manca a ogni buono sconto / obiettivo. Interfaccia e testi in italiano.
+
+### Struttura
+- `src/app/` — schermate (Expo Router): `index` carrello, `scan` fotocamera+OCR, `add` inserimento manuale, `coupons` coupon e impostazioni.
+- `src/features/<funzione>/` — logica pura senza UI (testabile): `cart`, `coupons`, `ocr`.
+- `src/components/` — componenti riusabili (`CouponLine`, `ItemEditor`).
+- `src/store/AppStore.tsx` — stato unico (reducer + AsyncStorage). Nuovi dati: campo in `AppState`, azioni nel reducer, alzare `SCHEMA_VERSION` e gestire `migrate()` se cambia la forma salvata.
+- `tests/run.ts` — test della logica (`npm test`).
+
+### Regole
+- Importi SEMPRE in centesimi interi (`Cents`), formattazione con `formatEuro`.
+- OCR solo tramite `src/features/ocr/recognizer.ts` (on-device, `expo-text-extractor`). Deve restare opzionale: in Expo Go l'app funziona con inserimento manuale.
+- Ogni nuova funzione: cartella in `src/features/`, logica pura + test in `tests/run.ts`, poi la schermata.
+- Prima di chiudere un lavoro: `npm run typecheck` e `npm test`.
+
+### Idee per il futuro (non ancora fatte)
+- Storico spese e statistiche mensili
+- Budget massimo con avviso
+- Lettura codice a barre e nome prodotto
+- Scansione del coupon (codice/QR) dalla fotocamera
+- Lista della spesa condivisa

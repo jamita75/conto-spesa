@@ -1,13 +1,14 @@
 {
   "expo": {
-    "name": "spesa-smart",
-    "slug": "spesa-smart",
+    "name": "Conto Spesa",
+    "slug": "conto-spesa",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "it.creaitivity.contospesa"
     },
     "android": {
       "adaptiveIcon": {
@@ -16,10 +17,24 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "it.creaitivity.contospesa"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "scheme": "contospesa",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Conto Spesa usa la fotocamera per leggere il prezzo sulle etichette dei prodotti."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
     }
   }
 }
