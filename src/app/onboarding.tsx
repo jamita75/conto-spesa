@@ -11,6 +11,7 @@ export default function Onboarding() {
   const { state, dispatch } = useStore();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<0 | 1>(0);
+  const [custom, setCustom] = useState(false);
 
   const finish = () => {
     dispatch({ type: 'onboarding/done' });
@@ -38,33 +39,69 @@ export default function Onboarding() {
         </>
       ) : (
         <>
-          <Text style={styles.title}>I tuoi dati</Text>
+          <Text style={styles.title}>Ci aiuti a migliorare?</Text>
           <Text style={styles.subtitle}>
-            Le tue spese restano sul tuo telefono. Puoi scegliere se aiutarci con statistiche anonime: è facoltativo e puoi cambiare idea quando vuoi dal Profilo.
+            Le tue spese restano sul tuo telefono. Se vuoi, puoi condividere in forma anonima cosa compri: ci aiuta a
+            migliorare l'app e a lavorare con i negozi partner su offerte e promozioni.
           </Text>
 
           <Card style={{ marginTop: space(6) }}>
-            <SwitchRow
-              title="Statistiche anonime"
-              help="Ci aiutano a migliorare l'app. Mai nome, telefono o posizione: solo prodotti, prezzi e tipo di negozio."
-              value={state.consent.stats}
-              onChange={(v) => dispatch({ type: 'consent/set', patch: { stats: v } })}
-            />
+            <Text style={styles.listTitle}>✓ Cosa condividi</Text>
+            <Text style={styles.listText}>Prodotti, prezzi, reparto, tipo di negozio e giorno della spesa.</Text>
+            <Text style={[styles.listTitle, { marginTop: space(3) }]}>✕ Cosa non condividi mai</Text>
+            <Text style={styles.listText}>Nome, numero di telefono, posizione, foto.</Text>
+            <Text style={[styles.listText, { marginTop: space(3) }]}>Puoi cambiare idea quando vuoi dal Profilo.</Text>
           </Card>
-          <Card>
-            <SwitchRow
-              title="Condividi con i negozi partner"
-              help="Statistiche anonime e aggregate condivise con catene della distribuzione, anche a pagamento, per migliorare offerte e promozioni."
-              value={state.consent.partners}
-              onChange={(v) => dispatch({ type: 'consent/set', patch: { partners: v } })}
-            />
-          </Card>
+
+          {custom ? (
+            <>
+              <Card>
+                <SwitchRow
+                  title="Statistiche anonime"
+                  help="Ci aiutano a migliorare l'app."
+                  value={state.consent.stats}
+                  onChange={(v) => dispatch({ type: 'consent/set', patch: { stats: v } })}
+                />
+              </Card>
+              <Card>
+                <SwitchRow
+                  title="Condividi con i negozi partner"
+                  help="Statistiche anonime e aggregate condivise con catene della distribuzione, anche a pagamento, per offerte e promozioni."
+                  value={state.consent.partners}
+                  onChange={(v) => dispatch({ type: 'consent/set', patch: { partners: v } })}
+                />
+              </Card>
+              <BigButton label="Conferma le mie scelte" onPress={finish} style={{ marginTop: space(3) }} />
+            </>
+          ) : (
+            <>
+              {/* «Accetta» e «Rifiuta» con la stessa evidenza: il consenso deve essere libero (GDPR) */}
+              <BigButton
+                label="Accetta e continua"
+                onPress={() => {
+                  dispatch({ type: 'consent/set', patch: { stats: true, partners: true } });
+                  finish();
+                }}
+                style={{ marginTop: space(2) }}
+              />
+              <BigButton
+                label="Continua senza condividere"
+                variant="ghost"
+                onPress={() => {
+                  dispatch({ type: 'consent/set', patch: { stats: false, partners: false } });
+                  finish();
+                }}
+                style={{ marginTop: space(3) }}
+              />
+              <Text style={styles.link} onPress={() => setCustom(true)}>
+                Scegli tu cosa condividere
+              </Text>
+            </>
+          )}
 
           <Text style={styles.link} onPress={() => router.push('/privacy')}>
             Leggi l'informativa privacy
           </Text>
-
-          <BigButton label="Inizia" onPress={finish} style={{ marginTop: space(6) }} />
         </>
       )}
     </ScrollView>
@@ -94,5 +131,7 @@ const styles = StyleSheet.create({
   stepNText: { color: '#fff', fontWeight: '800', fontSize: font.big },
   stepTitle: { fontSize: font.big, fontWeight: '800', color: colors.text },
   stepText: { fontSize: font.body, color: colors.muted, marginTop: 2, lineHeight: 23 },
-  link: { fontSize: font.body, color: colors.primaryDark, fontWeight: '700', textAlign: 'center', marginTop: space(2), textDecorationLine: 'underline' },
+  listTitle: { fontSize: font.body, fontWeight: '800', color: colors.text },
+  listText: { fontSize: font.body, color: colors.muted, marginTop: 2, lineHeight: 23 },
+  link: { fontSize: font.body, color: colors.primaryDark, fontWeight: '700', textAlign: 'center', marginTop: space(5), textDecorationLine: 'underline' },
 });
