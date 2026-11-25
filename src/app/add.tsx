@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { ItemEditor } from '../components/ItemEditor';
@@ -12,11 +13,12 @@ export default function AddScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { state, dispatch } = useStore();
   const existing = state.items.find((i) => i.id === id);
+  const insets = useSafeAreaInsets();
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Stack.Screen options={{ title: existing ? 'Modifica prodotto' : 'Aggiungi prodotto' }} />
-      <ScrollView contentContainerStyle={{ padding: space(4), paddingBottom: space(10) }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: space(4), paddingBottom: space(10) + insets.bottom }} keyboardShouldPersistTaps="handled">
         <ItemEditor
           initial={existing}
           chain={state.store?.chain}

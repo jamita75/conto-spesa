@@ -1,3 +1,4 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { PRIVACY_POLICY_VERSION } from '../features/consent/types';
@@ -32,8 +33,9 @@ const SECTIONS: { title: string; text: string }[] = [
 ];
 
 export default function PrivacyScreen() {
+  const insets = useSafeAreaInsets();
   return (
-    <ScrollView contentContainerStyle={{ padding: space(5), paddingBottom: space(12) }}>
+    <ScrollView contentContainerStyle={{ padding: space(5), paddingBottom: space(12) + insets.bottom }}>
       <Text style={styles.draft}>Bozza in revisione · versione {PRIVACY_POLICY_VERSION}</Text>
       {SECTIONS.map((s) => (
         <React.Fragment key={s.title}>

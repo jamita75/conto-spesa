@@ -2,6 +2,7 @@ import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import React from 'react';
 import { Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { daysToExpiry } from '../../features/coupons/couponLogic';
 import { colors } from '../../lib/theme';
 import { useStore } from '../../store/AppStore';
@@ -13,6 +14,8 @@ const icon = (emoji: string) =>
 
 export default function TabsLayout() {
   const { state, ready } = useStore();
+  // spazio occupato dai pulsanti di sistema Android (o dalla barra gesti / iPhone)
+  const insets = useSafeAreaInsets();
   if (!ready) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
   if (!state.onboarded) return <Redirect href="/onboarding" />;
 
@@ -31,7 +34,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primaryDark,
         tabBarInactiveTintColor: colors.muted,
         tabBarLabelStyle: { fontSize: 13, fontWeight: '700' },
-        tabBarStyle: { height: 68, paddingTop: 6, paddingBottom: 8 },
+        tabBarStyle: { height: 68 + insets.bottom, paddingTop: 6, paddingBottom: 8 + insets.bottom },
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >

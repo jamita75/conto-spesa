@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BigButton, SectionTitle } from '../components/ui';
@@ -12,6 +13,7 @@ export default function StoreScreen() {
   const { state, dispatch } = useStore();
   const [type, setType] = useState<StoreType | undefined>(state.store?.type);
   const [other, setOther] = useState('');
+  const insets = useSafeAreaInsets();
 
   const choose = (t: StoreType, chain?: string) => {
     dispatch({ type: 'store/set', store: { type: t, chain: chain?.trim() || undefined } });
@@ -20,7 +22,7 @@ export default function StoreScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ padding: space(4), paddingBottom: space(10) }} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={{ padding: space(4), paddingBottom: space(10) + insets.bottom }} keyboardShouldPersistTaps="handled">
       <SectionTitle>1. Che tipo di negozio?</SectionTitle>
       <View style={styles.typeRow}>
         {(['food', 'nonfood'] as const).map((t) => (

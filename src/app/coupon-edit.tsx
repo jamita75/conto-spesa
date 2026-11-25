@@ -177,7 +177,7 @@ export default function CouponEdit() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ padding: space(4), paddingBottom: space(12) }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: space(4), paddingBottom: space(12) + insets.bottom }} keyboardShouldPersistTaps="handled">
         {!existing ? (
           <>
             <SectionTitle>Scelta rapida</SectionTitle>
