@@ -75,6 +75,10 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
 - Limite di spesa: `settings.budget` (centesimi, resta tra una spesa e l'altra), logica in `features/budget/`,
   confronto con `toPay` (totale meno buoni). Barra `BudgetBar` nella Spesa, modale `budget`, avvisi una sola volta
   al peggioramento in `store/useBudgetAlerts.ts` (montato nel layout delle schede, vale anche durante la scansione).
+- Buoni della spesa in corso: `cartCoupons(state)` (reducer.ts) = buoni del negozio meno `skipCoupons` («Non oggi»,
+  azzerato a fine spesa). Usare SEMPRE `cartCoupons` per totale/limite/avvisi. `CouponPicker` nella Spesa; avviso
+  «buono sbloccato» in `store/useCouponAlerts.ts`; a fine spesa `markUsed` spegne i buoni applicati e salva `usedOn`.
+  Scheda Buoni a sezioni (`sortCoupons`/`couponState`): da usare, più avanti, spenti, scaduti, già usati.
 - Prezzi: il parser gestisce cartellini da scaffale ed etichette del fresco pesato (peso, €/kg, «da pagare»).
 - Offerte riservate: `offers/offerte.json` nel repo (letto da `OFFERS_URL` all'apertura, solo con consenso partner).
   Si pubblicano offerte modificando quel file, senza aggiornare l'app. «Socio fondatore» = consenso partner entro `FOUNDER_UNTIL`.

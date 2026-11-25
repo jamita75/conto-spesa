@@ -1,7 +1,7 @@
 import { buildAnonymousRecord, QUEUE_LIMIT, type AnonymousPurchase } from '../features/analytics/collector';
 import { cartSubtotal, type CartItem } from '../features/cart/types';
 import { NO_CONSENT, PRIVACY_POLICY_VERSION, type Consent } from '../features/consent/types';
-import { computeCouponProgress, couponsForStore } from '../features/coupons/couponLogic';
+import { computeCouponProgress, couponsForCart, todayIso } from '../features/coupons/couponLogic';
 import type { Coupon } from '../features/coupons/types';
 import type { ShoppingSession } from '../features/history/types';
 import { isFounderEligible, offerToCoupon, type PartnerOffer } from '../features/offers/feed';
@@ -41,6 +41,8 @@ export type AppState = {
   offersFetchedAt?: number;
   /** codice casuale (pseudonimo) del telefono, esiste solo finché c'è almeno un consenso */
   pid?: string;
+  /** buoni esclusi solo per la spesa in corso («Non oggi»); si azzera a fine spesa */
+  skipCoupons?: string[];
   /** richieste al server ancora da inviare (cancellazione / revoca partner) */
   pendingOps: ServerOp[];
 };
@@ -72,7 +74,9 @@ export type Action =
   | { type: 'item/update'; id: string; patch: Partial<Omit<CartItem, 'id'>> }
   | { type: 'item/remove'; id: string }
   | { type: 'cart/clear' }
-  | { type: 'session/finish'; id: string }
+  /** markUsed: i buoni applicati vengono segnati come usati (e spenti) */
+  | { type: 'session/finish'; id: string; markUsed?: boolean }
+  | { type: 'cart/toggleCoupon'; id: string }
   | { type: 'history/remove'; id: string }
   | { type: 'coupon/add'; coupon: Omit<Coupon, 'id'> }
   | { type: 'coupon/update'; id: string; patch: Partial<Omit<Coupon, 'id'>> }
@@ -85,6 +89,9 @@ export type Action =
   | { type: 'offer/claim'; offer: PartnerOffer }
   | { type: 'analytics/sent'; rids: string[] }
   | { type: 'ops/done'; op: ServerOp };
+
+/** buoni che valgono per la spesa in corso (negozio scelto, meno gli esclusi) */
+export const cartCoupons = (s: AppState) => couponsForCart(s.coupons, s.store, s.skipCoupons);
 
 export const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -111,15 +118,24 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'item/remove':
       return { ...state, items: state.items.filter((i) => i.id !== action.id) };
     case 'cart/clear':
-      return { ...state, items: [] };
+      return { ...state, items: [], skipCoupons: [] };
+    case 'cart/toggleCoupon': {
+      const skip = state.skipCoupons ?? [];
+      return {
+        ...state,
+        skipCoupons: skip.includes(action.id) ? skip.filter((x) => x !== action.id) : [...skip, action.id],
+      };
+    }
     case 'session/finish': {
       if (!state.items.length) return state;
       const subtotal = cartSubtotal(state.items);
       const progress = computeCouponProgress(
-        couponsForStore(state.coupons, state.store),
+        cartCoupons(state),
         state.items,
         state.settings.stackCoupons,
       );
+      const usedIds = action.markUsed ? new Set(progress.applied.map((c) => c.id)) : new Set<string>();
+      const day = todayIso();
       const session: ShoppingSession = {
         id: action.id,
         date: Date.now(),
@@ -134,6 +150,10 @@ export function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         items: [],
+        skipCoupons: [],
+        coupons: usedIds.size
+          ? state.coupons.map((c) => (usedIds.has(c.id) ? { ...c, active: false, usedOn: day } : c))
+          : state.coupons,
         history: [session, ...state.history].slice(0, HISTORY_LIMIT),
         analyticsQueue: record ? [...state.analyticsQueue, record].slice(-QUEUE_LIMIT) : state.analyticsQueue,
       };

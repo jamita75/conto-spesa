@@ -2,9 +2,10 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useMemo, useRef } from 'react';
 import { Alert } from 'react-native';
 import { budgetStatus, budgetWorsened, type BudgetLevel } from '../features/budget/budget';
-import { computeCouponProgress, couponsForStore } from '../features/coupons/couponLogic';
+import { computeCouponProgress } from '../features/coupons/couponLogic';
 import { formatEuro } from '../lib/money';
 import { useStore } from './AppStore';
+import { cartCoupons } from './reducer';
 
 /**
  * Avvisa una sola volta quando la spesa si avvicina al limite (vibrazione)
@@ -15,9 +16,9 @@ export function useBudgetAlerts() {
   const { state, ready } = useStore();
   const budget = state.settings.budget;
   const toPay = useMemo(() => {
-    const coupons = couponsForStore(state.coupons, state.store);
-    return computeCouponProgress(coupons, state.items, state.settings.stackCoupons).toPay;
-  }, [state.coupons, state.store, state.items, state.settings.stackCoupons]);
+    return computeCouponProgress(cartCoupons(state), state.items, state.settings.stackCoupons).toPay;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.coupons, state.store, state.skipCoupons, state.items, state.settings.stackCoupons]);
 
   const level: BudgetLevel | null = budget ? budgetStatus(toPay, budget).level : null;
   const prev = useRef<BudgetLevel | null | undefined>(undefined);

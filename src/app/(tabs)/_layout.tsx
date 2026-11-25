@@ -8,6 +8,7 @@ import { fetchOffers } from '../../features/offers/feed';
 import { colors } from '../../lib/theme';
 import { useStore } from '../../store/AppStore';
 import { useBudgetAlerts } from '../../store/useBudgetAlerts';
+import { useCouponAlerts } from '../../store/useCouponAlerts';
 import { useServerSync } from '../../store/useServerSync';
 
 const icon = (emoji: string) =>
@@ -20,6 +21,7 @@ export default function TabsLayout() {
   const partners = state.consent.partners;
   useServerSync();
   useBudgetAlerts();
+  useCouponAlerts();
 
   // legge le offerte riservate dal file online (nessun aggiornamento dell'app necessario)
   useEffect(() => {

@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ItemEditor, type ItemDraft } from '../components/ItemEditor';
 import { budgetStatus } from '../features/budget/budget';
 import { cartSubtotal } from '../features/cart/types';
-import { computeCouponProgress, couponsForStore } from '../features/coupons/couponLogic';
+import { computeCouponProgress } from '../features/coupons/couponLogic';
 import { classifyProduct } from '../features/catalog/classify';
 import { extractProductName } from '../features/ocr/nameParser';
 import { extractPriceCandidates, pickConfidentPrice, type PriceCandidate } from '../features/ocr/priceParser';
@@ -24,6 +24,7 @@ import { isOcrAvailable, recognizeText } from '../features/ocr/recognizer';
 import { formatEuro, type Cents } from '../lib/money';
 import { colors, radius, space } from '../lib/theme';
 import { newId, useStore } from '../store/AppStore';
+import { cartCoupons } from '../store/reducer';
 
 type Phase = { kind: 'camera' } | { kind: 'reading' } | { kind: 'confirm'; candidates: PriceCandidate[]; name?: string };
 type Toast = { id: string; price: Cents; qty: number; label?: string };
@@ -50,8 +51,9 @@ export default function ScanScreen() {
   // limite di spesa: colore del totale e riga nel messaggio di conferma
   const budget = state.settings.budget;
   const toPay = useMemo(
-    () => computeCouponProgress(couponsForStore(state.coupons, state.store), state.items, state.settings.stackCoupons).toPay,
-    [state.coupons, state.store, state.items, state.settings.stackCoupons],
+    () => computeCouponProgress(cartCoupons(state), state.items, state.settings.stackCoupons).toPay,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state.coupons, state.store, state.skipCoupons, state.items, state.settings.stackCoupons],
   );
   const bStatus = budget ? budgetStatus(toPay, budget) : null;
   const pillColor = bStatus?.level === 'over' ? colors.danger : bStatus?.level === 'near' ? colors.accent : colors.primary;

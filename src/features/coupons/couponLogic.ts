@@ -11,6 +11,23 @@ export function couponsForStore(coupons: Coupon[], store?: Store): Coupon[] {
   return coupons.filter((c) => !c.chain || c.chain.toLowerCase() === chain);
 }
 
+/**
+ * Buoni della spesa in corso: quelli del negozio scelto, meno quelli che l'utente
+ * ha escluso per questa spesa («Non oggi»).
+ */
+export function couponsForCart(coupons: Coupon[], store: Store | undefined, skip: string[] = []): Coupon[] {
+  return couponsForStore(coupons, store).filter((c) => !skip.includes(c.id));
+}
+
+/** buoni che si possono scegliere per la spesa di oggi (attivi, validi oggi, del negozio) */
+export function selectableCoupons(coupons: Coupon[], store: Store | undefined, today = new Date()): Coupon[] {
+  return couponsForStore(coupons, store).filter((c) => isUsableToday(c, today));
+}
+
+const todayIso = (d = new Date()) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+export { todayIso };
+
 const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 const isoToTime = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number);
@@ -162,4 +179,36 @@ export function describeScope(scope?: CouponScope): string {
   const names = scope.segments.map((s) => segmentInfo(s).label);
   if (names.length === 0) return 'nessun reparto';
   return names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`;
+}
+
+/** id dei buoni sbloccati adesso che prima non lo erano (per avvisare una sola volta) */
+export function newlyUnlocked(before: string[], now: Coupon[]): Coupon[] {
+  return now.filter((c) => !before.includes(c.id));
+}
+
+/**
+ * Ordine della lista buoni: prima quelli utilizzabili oggi (scadenza più vicina in alto),
+ * poi quelli che valgono più avanti, poi spenti, scaduti e già usati.
+ */
+export function couponSortKey(c: Coupon, today = new Date()): [number, number] {
+  const exp = daysToExpiry(c, today);
+  const soon = exp ?? 9999;
+  if (c.usedOn) return [4, -Date.parse(c.usedOn)];
+  if (isExpired(c, today)) return [3, -soon];
+  if (!c.active) return [2, soon];
+  if (isNotYetValid(c, today)) return [1, daysToStart(c, today) ?? 0];
+  return [0, soon];
+}
+
+export function sortCoupons(list: Coupon[], today = new Date()): Coupon[] {
+  return [...list].sort((a, b) => {
+    const ka = couponSortKey(a, today);
+    const kb = couponSortKey(b, today);
+    return ka[0] - kb[0] || ka[1] - kb[1] || a.minSpend - b.minSpend;
+  });
+}
+
+export type CouponState = 'usable' | 'upcoming' | 'off' | 'expired' | 'used';
+export function couponState(c: Coupon, today = new Date()): CouponState {
+  return (['usable', 'upcoming', 'off', 'expired', 'used'] as const)[couponSortKey(c, today)[0]];
 }

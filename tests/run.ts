@@ -4,7 +4,15 @@ import { makeBarcode } from '../src/features/barcode/encode';
 import { budgetStatus, budgetWorsened } from '../src/features/budget/budget';
 import { guessPrivateLabel } from '../src/features/catalog/privateLabel';
 import { guessSegment } from '../src/features/catalog/segments';
-import { computeCouponProgress, couponsForStore, describeScope } from '../src/features/coupons/couponLogic';
+import {
+  computeCouponProgress,
+  couponState,
+  couponsForCart,
+  couponsForStore,
+  describeScope,
+  newlyUnlocked,
+  sortCoupons,
+} from '../src/features/coupons/couponLogic';
 import { monthSummary } from '../src/features/history/types';
 import { extractProductName } from '../src/features/ocr/nameParser';
 import { parseOffersFile, visibleOffers } from '../src/features/offers/feed';
@@ -381,6 +389,64 @@ t('limite salvato nelle impostazioni e tolto', () => {
   st = reducer(st, { type: 'settings/update', patch: { budget: undefined } });
   assert.equal(st.settings.budget, undefined);
   assert.equal(migrate(JSON.parse(JSON.stringify(st))).settings.budget, undefined);
+});
+
+// --- buoni della spesa in corso ---
+const mk = (id: string, extra: Partial<Coupon> = {}): Coupon => ({
+  id,
+  name: `Buono ${id}`,
+  minSpend: 3000,
+  kind: 'amount',
+  value: 500,
+  active: true,
+  ...extra,
+});
+t('buoni scelti per la spesa: «Non oggi» li esclude', () => {
+  const list = [mk('a'), mk('b')];
+  assert.deepEqual(couponsForCart(list, undefined, ['b']).map((c) => c.id), ['a']);
+  let st = { ...initialState, coupons: list, items: [{ id: 'i', price: 3500, qty: 1, createdAt: 0 } as any] };
+  st = reducer(st, { type: 'cart/toggleCoupon', id: 'a' });
+  assert.deepEqual(st.skipCoupons, ['a']);
+  st = reducer(st, { type: 'cart/toggleCoupon', id: 'a' });
+  assert.deepEqual(st.skipCoupons, []);
+  st = reducer(st, { type: 'cart/toggleCoupon', id: 'b' });
+  // escluso b: si applica a
+  st = reducer(st, { type: 'session/finish', id: 's1', markUsed: true });
+  assert.equal(st.history[0].discount, 500);
+  assert.deepEqual(st.history[0].couponsUsed, ['Buono a']);
+  const a = st.coupons.find((c) => c.id === 'a')!;
+  const b = st.coupons.find((c) => c.id === 'b')!;
+  assert.equal(a.active, false);
+  assert.ok(a.usedOn);
+  assert.equal(b.active, true);
+  assert.equal(b.usedOn, undefined);
+  assert.deepEqual(st.skipCoupons, []);
+});
+t('fine spesa senza segnare usato: il buono resta attivo', () => {
+  let st = { ...initialState, coupons: [mk('a')], items: [{ id: 'i', price: 3500, qty: 1, createdAt: 0 } as any] };
+  st = reducer(st, { type: 'session/finish', id: 's1' });
+  assert.equal(st.coupons[0].active, true);
+});
+t('avviso buono sbloccato una sola volta', () => {
+  const a = mk('a');
+  const b = mk('b');
+  assert.deepEqual(newlyUnlocked([], [a]).map((c) => c.id), ['a']);
+  assert.deepEqual(newlyUnlocked(['a'], [a, b]).map((c) => c.id), ['b']);
+  assert.equal(newlyUnlocked(['a', 'b'], [a, b]).length, 0);
+});
+t('lista buoni ordinata per stato e scadenza', () => {
+  const today = new Date(2026, 10, 25);
+  const list = [
+    mk('usato', { active: false, usedOn: '2026-11-20' }),
+    mk('scaduto', { expiresOn: '2026-11-01' }),
+    mk('spento', { active: false }),
+    mk('futuro', { startsOn: '2026-12-01' }),
+    mk('lontano', { expiresOn: '2026-12-31' }),
+    mk('vicino', { expiresOn: '2026-11-27' }),
+  ];
+  assert.deepEqual(sortCoupons(list, today).map((c) => c.id), ['vicino', 'lontano', 'futuro', 'spento', 'scaduto', 'usato']);
+  assert.equal(couponState(list[0], today), 'used');
+  assert.equal(couponState(list[3], today), 'upcoming');
 });
 
 console.log(`\n${passed} test superati`);

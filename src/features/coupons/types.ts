@@ -35,6 +35,8 @@ export type Coupon = {
   scope?: CouponScope;
   /** chi l'ha inserito: l'utente o (in futuro) un'insegna partner per promozioni dirette */
   source?: 'user' | 'partner';
+  /** giorno in cui è stato usato in cassa (ISO yyyy-mm-dd): da allora è spento */
+  usedOn?: string;
   /** id dell'offerta partner da cui è stato preso */
   offerId?: string;
 };

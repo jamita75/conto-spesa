@@ -4,39 +4,53 @@ import React, { useMemo } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BudgetBar } from '../../components/BudgetBar';
 import { CouponLine } from '../../components/CouponLine';
+import { CouponPicker } from '../../components/CouponPicker';
 import { cartCount, cartSubtotal, type CartItem } from '../../features/cart/types';
 import { segmentInfo } from '../../features/catalog/segments';
-import { computeCouponProgress, couponsForStore } from '../../features/coupons/couponLogic';
+import { computeCouponProgress, couponsForStore, selectableCoupons } from '../../features/coupons/couponLogic';
 import { STORE_TYPE_ICON, storeLabel } from '../../features/store/types';
 import { formatEuro } from '../../lib/money';
 import { colors, font, radius, space } from '../../lib/theme';
 import { newId, useStore } from '../../store/AppStore';
+import { cartCoupons } from '../../store/reducer';
 
 export default function CartScreen() {
   const { state, dispatch } = useStore();
   const subtotal = cartSubtotal(state.items);
   const storeCoupons = useMemo(() => couponsForStore(state.coupons, state.store), [state.coupons, state.store]);
+  const selectable = useMemo(() => selectableCoupons(state.coupons, state.store), [state.coupons, state.store]);
+  const skip = state.skipCoupons ?? [];
   const progress = useMemo(
-    () => computeCouponProgress(storeCoupons, state.items, state.settings.stackCoupons),
-    [storeCoupons, state.items, state.settings.stackCoupons],
+    () => computeCouponProgress(cartCoupons(state), state.items, state.settings.stackCoupons),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [state.coupons, state.store, state.skipCoupons, state.items, state.settings.stackCoupons],
   );
   const pieces = cartCount(state.items);
 
-  const finish = () =>
+  const finish = () => {
+    const save = (markUsed: boolean) => {
+      dispatch({ type: 'session/finish', id: newId(), markUsed });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    };
+    const where = state.store?.chain ? ` da ${state.store.chain}` : '';
+    const names = progress.applied.map((c) => `«${c.name}»`).join(', ');
+    if (!progress.applied.length) {
+      Alert.alert('Spesa finita?', `Salvo ${formatEuro(progress.toPay)} nelle tue spese${where} e svuoto il carrello.`, [
+        { text: 'Non ancora', style: 'cancel' },
+        { text: 'Sì, salva', onPress: () => save(false) },
+      ]);
+      return;
+    }
     Alert.alert(
       'Spesa finita?',
-      `Salvo ${formatEuro(progress.toPay)} nelle tue spese${state.store?.chain ? ` da ${state.store.chain}` : ''} e svuoto il carrello.`,
+      `Salvo ${formatEuro(progress.toPay)} nelle tue spese${where}.\n\nHai usato in cassa ${names}? Se sì lo segno come «usato» e non lo conto più nelle prossime spese.`,
       [
         { text: 'Non ancora', style: 'cancel' },
-        {
-          text: 'Sì, salva',
-          onPress: () => {
-            dispatch({ type: 'session/finish', id: newId() });
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
-        },
+        { text: 'Salva, non usato', onPress: () => save(false) },
+        { text: 'Salva, buono usato', onPress: () => save(true) },
       ],
     );
+  };
 
   const clear = () =>
     Alert.alert('Svuotare il carrello?', 'I prodotti verranno tolti senza salvare la spesa.', [
@@ -94,6 +108,9 @@ export default function CartScreen() {
 
       <BudgetBar budget={state.settings.budget} toPay={progress.toPay} />
 
+      {selectable.length ? (
+        <CouponPicker coupons={selectable} skip={skip} onToggle={(id) => dispatch({ type: 'cart/toggleCoupon', id })} />
+      ) : null}
       {storeCoupons.length ? (
         <CouponLine progress={progress} subtotal={subtotal} />
       ) : (
