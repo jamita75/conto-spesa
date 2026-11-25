@@ -1,0 +1,56 @@
+# Costruisce l'APK Android ad ogni push su main (o a mano da Actions > Run workflow)
+# e lo pubblica come Release: scaricabile dal telefono.
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Installa dipendenze
+        run: npm ci
+
+      - name: Controlli (typecheck + test)
+        run: |
+          npx tsc --noEmit
+          npx --yes tsx tests/run.ts
+
+      - name: Genera progetto Android
+        run: npx expo prebuild --platform android --no-install
+        env:
+          CI: 1
+
+      - name: Compila APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+
+      - name: Rinomina APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk conto-spesa-v1.0.${{ github.run_number }}.apk
+
+      - name: Pubblica Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v1.0.${{ github.run_number }}" conto-spesa-v1.0.${{ github.run_number }}.apk \
+            --title "Conto Spesa v1.0.${{ github.run_number }}" \
+            --notes "APK Android. Apri il file dal telefono e installalo (consenti l'installazione da origini sconosciute)."
