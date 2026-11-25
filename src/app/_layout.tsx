@@ -23,6 +23,7 @@ export default function RootLayout() {
         <Stack.Screen name="store" options={{ title: 'Dove fai la spesa?', presentation: 'modal' }} />
         <Stack.Screen name="coupon-edit" options={{ title: 'Buono sconto', presentation: 'modal' }} />
         <Stack.Screen name="coupon-show" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="budget" options={{ title: 'Limite di spesa', presentation: 'modal' }} />
         <Stack.Screen name="privacy" options={{ title: 'Informativa privacy' }} />
       </Stack>
     </AppStoreProvider>

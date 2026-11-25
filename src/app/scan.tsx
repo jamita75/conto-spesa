@@ -1,7 +1,7 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,7 +14,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ItemEditor, type ItemDraft } from '../components/ItemEditor';
+import { budgetStatus } from '../features/budget/budget';
 import { cartSubtotal } from '../features/cart/types';
+import { computeCouponProgress, couponsForStore } from '../features/coupons/couponLogic';
 import { classifyProduct } from '../features/catalog/classify';
 import { extractProductName } from '../features/ocr/nameParser';
 import { extractPriceCandidates, pickConfidentPrice, type PriceCandidate } from '../features/ocr/priceParser';
@@ -45,6 +47,14 @@ export default function ScanScreen() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const ocr = isOcrAvailable();
+  // limite di spesa: colore del totale e riga nel messaggio di conferma
+  const budget = state.settings.budget;
+  const toPay = useMemo(
+    () => computeCouponProgress(couponsForStore(state.coupons, state.store), state.items, state.settings.stackCoupons).toPay,
+    [state.coupons, state.store, state.items, state.settings.stackCoupons],
+  );
+  const bStatus = budget ? budgetStatus(toPay, budget) : null;
+  const pillColor = bStatus?.level === 'over' ? colors.danger : bStatus?.level === 'near' ? colors.accent : colors.primary;
   const auto = state.settings.autoScan && ocr;
 
   // stato della lettura continua (ref: non deve ridisegnare lo schermo)
@@ -212,7 +222,7 @@ export default function ScanScreen() {
         <Pressable style={styles.roundBtn} onPress={() => router.back()}>
           <Text style={styles.roundTxt}>✕</Text>
         </Pressable>
-        <View style={styles.totalPill}>
+        <View style={[styles.totalPill, { backgroundColor: pillColor }]}>
           <Text style={styles.totalPillText}>{formatEuro(cartSubtotal(state.items))}</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: space(2) }}>
@@ -244,6 +254,16 @@ export default function ScanScreen() {
               {toast.qty > 1 ? ` (${toast.qty}×)` : ''}
             </Text>
             <Text style={styles.toastSub}>totale {formatEuro(cartSubtotal(state.items))}</Text>
+            {bStatus ? (
+              <Text
+                style={[
+                  styles.toastSub,
+                  { fontWeight: '800', color: bStatus.level === 'over' ? colors.danger : bStatus.level === 'near' ? '#8A5A00' : colors.primaryDark },
+                ]}
+              >
+                {bStatus.level === 'over' ? `⛔ oltre il limite di ${formatEuro(bStatus.over)}` : `restano ${formatEuro(bStatus.left)} del limite`}
+              </Text>
+            ) : null}
           </View>
           <Pressable style={styles.toastBtn} onPress={toastPlusOne}>
             <Text style={styles.toastBtnTxt}>+1</Text>

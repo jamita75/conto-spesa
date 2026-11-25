@@ -72,6 +72,9 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
   Checklist legale: `docs/PRIVACY-CHECKLIST.md`.
 - Buoni: ambito `scope` (tutta la spesa / marca del negozio / altre marche / reparti), `startsOn` + `expiresOn`.
   La spesa minima di un buono con ambito conta solo i prodotti del suo ambito (`eligibleSubtotal`).
+- Limite di spesa: `settings.budget` (centesimi, resta tra una spesa e l'altra), logica in `features/budget/`,
+  confronto con `toPay` (totale meno buoni). Barra `BudgetBar` nella Spesa, modale `budget`, avvisi una sola volta
+  al peggioramento in `store/useBudgetAlerts.ts` (montato nel layout delle schede, vale anche durante la scansione).
 - Prezzi: il parser gestisce cartellini da scaffale ed etichette del fresco pesato (peso, €/kg, «da pagare»).
 - Offerte riservate: `offers/offerte.json` nel repo (letto da `OFFERS_URL` all'apertura, solo con consenso partner).
   Si pubblicano offerte modificando quel file, senza aggiornare l'app. «Socio fondatore» = consenso partner entro `FOUNDER_UNTIL`.
@@ -80,7 +83,6 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
 - Prima di chiudere un lavoro: `npm run typecheck` e `npm test`.
 
 ### Idee per il futuro (non ancora fatte)
-- Budget massimo con avviso
 - Lettura codice EAN del prodotto per nome/categoria automatici
 - Lista della spesa condivisa
 - Versione per il Play Store: AAB firmato con chiave propria

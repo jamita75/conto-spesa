@@ -18,6 +18,8 @@ export type Settings = {
   stackCoupons: boolean;
   /** modalità automatica: legge di continuo e aggiunge da solo i prezzi sicuri */
   autoScan: boolean;
+  /** limite di spesa in centesimi (contanti / disponibilità carta); assente = nessun limite */
+  budget?: number;
 };
 
 export type AppState = {

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { buildAnonymousRecord } from '../src/features/analytics/collector';
 import { makeBarcode } from '../src/features/barcode/encode';
+import { budgetStatus, budgetWorsened } from '../src/features/budget/budget';
 import { guessPrivateLabel } from '../src/features/catalog/privateLabel';
 import { guessSegment } from '../src/features/catalog/segments';
 import { computeCouponProgress, couponsForStore, describeScope } from '../src/features/coupons/couponLogic';
@@ -352,6 +353,34 @@ t('migrazione v3 → v4', () => {
   const s = migrate({ schema: 3, onboarded: true, items: [], coupons: [], history: [], settings: {}, consent: { stats: true, partners: true }, analyticsQueue: [{ v: 1 }], offers: [] });
   assert.deepEqual([s.schema, s.pendingOps.length, s.analyticsQueue.length, s.pid], [4, 0, 0, undefined]);
   assert.deepEqual([s.consent.stats, s.consent.partners, s.onboarded], [false, false, false]); // riconferma con nuova informativa
+});
+
+// --- limite di spesa ---
+t('limite: dentro, vicino, superato', () => {
+  assert.equal(budgetStatus(2000, 5000).level, 'ok');
+  assert.equal(budgetStatus(2000, 5000).left, 3000);
+  assert.equal(budgetStatus(4300, 5000).level, 'near'); // 86%
+  assert.equal(budgetStatus(1700, 2000).level, 'near'); // restano 3 € (< 5 €)
+  const o = budgetStatus(5250, 5000);
+  assert.equal(o.level, 'over');
+  assert.equal(o.over, 250);
+  assert.equal(o.left, 0);
+  assert.equal(o.ratio, 1);
+  assert.equal(budgetStatus(5000, 5000).level, 'near'); // esattamente il limite: ancora pagabile
+  assert.equal(budgetStatus(0, 300).level, 'ok'); // carrello vuoto: nessun avviso
+});
+t('limite: avviso solo quando peggiora', () => {
+  assert.ok(budgetWorsened('ok', 'near'));
+  assert.ok(budgetWorsened('near', 'over'));
+  assert.ok(!budgetWorsened('over', 'over'));
+  assert.ok(!budgetWorsened('over', 'near'));
+});
+t('limite salvato nelle impostazioni e tolto', () => {
+  let st = reducer(initialState, { type: 'settings/update', patch: { budget: 5000 } });
+  assert.equal(st.settings.budget, 5000);
+  st = reducer(st, { type: 'settings/update', patch: { budget: undefined } });
+  assert.equal(st.settings.budget, undefined);
+  assert.equal(migrate(JSON.parse(JSON.stringify(st))).settings.budget, undefined);
 });
 
 console.log(`\n${passed} test superati`);

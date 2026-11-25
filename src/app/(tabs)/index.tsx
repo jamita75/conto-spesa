@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { BudgetBar } from '../../components/BudgetBar';
 import { CouponLine } from '../../components/CouponLine';
 import { cartCount, cartSubtotal, type CartItem } from '../../features/cart/types';
 import { segmentInfo } from '../../features/catalog/segments';
@@ -90,6 +91,8 @@ export default function CartScreen() {
           </View>
         ) : null}
       </View>
+
+      <BudgetBar budget={state.settings.budget} toPay={progress.toPay} />
 
       {storeCoupons.length ? (
         <CouponLine progress={progress} subtotal={subtotal} />

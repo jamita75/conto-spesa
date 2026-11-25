@@ -7,6 +7,7 @@ import { daysToExpiry } from '../../features/coupons/couponLogic';
 import { fetchOffers } from '../../features/offers/feed';
 import { colors } from '../../lib/theme';
 import { useStore } from '../../store/AppStore';
+import { useBudgetAlerts } from '../../store/useBudgetAlerts';
 import { useServerSync } from '../../store/useServerSync';
 
 const icon = (emoji: string) =>
@@ -18,6 +19,7 @@ export default function TabsLayout() {
   const { state, dispatch, ready } = useStore();
   const partners = state.consent.partners;
   useServerSync();
+  useBudgetAlerts();
 
   // legge le offerte riservate dal file online (nessun aggiornamento dell'app necessario)
   useEffect(() => {
