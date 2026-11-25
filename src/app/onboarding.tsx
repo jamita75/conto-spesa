@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BigButton, Card, SwitchRow } from '../components/ui';
+import { isFounderEligible } from '../features/offers/feed';
 import { colors, font, space } from '../lib/theme';
 import { useStore } from '../store/AppStore';
 
@@ -39,10 +40,11 @@ export default function Onboarding() {
         </>
       ) : (
         <>
-          <Text style={styles.title}>Ci aiuti a migliorare?</Text>
+          <Text style={styles.logo}>🔓</Text>
+          <Text style={styles.title}>Sblocca le offerte riservate</Text>
           <Text style={styles.subtitle}>
-            Le tue spese restano sul tuo telefono. Se vuoi, puoi condividere in forma anonima cosa compri: ci aiuta a
-            migliorare l'app e a lavorare con i negozi partner su offerte e promozioni.
+            Condividi in forma anonima cosa compri e ricevi nell'app i buoni sconto dei negozi partner.
+            {isFounderEligible() ? ' Chi accetta ora diventa ⭐ Socio fondatore: i buoni li vede per primo.' : ''}
           </Text>
 
           <Card style={{ marginTop: space(6) }}>
@@ -77,7 +79,7 @@ export default function Onboarding() {
             <>
               {/* «Accetta» e «Rifiuta» con la stessa evidenza: il consenso deve essere libero (GDPR) */}
               <BigButton
-                label="Accetta e continua"
+                label={isFounderEligible() ? 'Sblocca e diventa Socio fondatore' : 'Sblocca le offerte'}
                 onPress={() => {
                   dispatch({ type: 'consent/set', patch: { stats: true, partners: true } });
                   finish();

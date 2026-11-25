@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SEGMENTS } from '../../features/catalog/segments';
@@ -71,6 +72,14 @@ export default function HistoryScreen() {
               <Text style={styles.sumSub}>Senza negozio indicato: {formatEuro(summary.byType.unknown)}</Text>
             ) : null}
           </View>
+
+          {!state.consent.partners && summary.count > 0 ? (
+            <Pressable style={styles.teaser} onPress={() => router.push('/(tabs)/coupons')}>
+              <Text style={styles.teaserText}>
+                🔒 Con le offerte riservate dei negozi partner potresti risparmiare di più. Tocca per sbloccarle.
+              </Text>
+            </Pressable>
+          ) : null}
 
           {summary.count ? (
             <View style={styles.segCard}>
@@ -166,6 +175,8 @@ const styles = StyleSheet.create({
   splitBox: { flex: 1, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: radius.md, padding: space(3) },
   splitLabel: { color: '#fff', fontSize: font.small, fontWeight: '700' },
   splitValue: { color: '#fff', fontSize: font.big, fontWeight: '800', marginTop: 2 },
+  teaser: { backgroundColor: colors.accentSoft, borderRadius: radius.md, padding: space(4), marginBottom: space(4), borderWidth: 1.5, borderColor: colors.accent, borderStyle: 'dashed' },
+  teaserText: { fontSize: font.body - 1, color: colors.text, fontWeight: '700', lineHeight: 22 },
   segCard: { backgroundColor: colors.card, borderRadius: radius.md, padding: space(4), marginBottom: space(4), borderWidth: 1, borderColor: colors.border, gap: space(2) },
   segTitle: { fontSize: font.small, fontWeight: '800', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.6 },
   segRow: { flexDirection: 'row', alignItems: 'center', gap: space(2) },

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "_istruzioni": "Aggiungi un'offerta copiando l'esempio in 'offers'. Importi in CENTESIMI (500 = 5 euro). kind: amount (euro) o percent. scope.kind: all, privateLabel, otherBrands, segments (segments: fruttaVerdura, carne, pesce, salumiFormaggi, latteYogurt, panePasticceria, dispensa, surgelati, bevande, dolciSnack, casaIgiene, animali). Date aaaa-mm-gg. foundersOnly: true = solo Soci fondatori.",
+  "_esempio": {
+    "id": "conad-carne-2026-12",
+    "chain": "Conad",
+    "title": "3 € sulla carne",
+    "description": "Spendi almeno 15 € in carne e risparmi 3 €",
+    "kind": "amount",
+    "value": 300,
+    "minSpend": 1500,
+    "scope": { "kind": "segments", "segments": ["carne"] },
+    "code": "CARNE3",
+    "startsOn": "2026-12-01",
+    "expiresOn": "2026-12-31",
+    "foundersOnly": true
+  },
+  "offers": []
+}

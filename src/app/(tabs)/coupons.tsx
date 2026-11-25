@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import React from 'react';
 import { FlatList, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { OffersBox } from '../../components/OffersBox';
 import { BigButton } from '../../components/ui';
 import { daysToExpiry, daysToStart, describeCoupon, describeScope, isExpired, isNotYetValid } from '../../features/coupons/couponLogic';
 import type { Coupon } from '../../features/coupons/types';
@@ -36,9 +37,12 @@ export default function CouponsScreen() {
         keyExtractor={(c) => c.id}
         contentContainerStyle={{ padding: space(4), paddingBottom: 120 }}
         ListHeaderComponent={
-          sorted.length ? (
-            <Text style={styles.intro}>Tocca un buono per modificarlo. Con «Mostra in cassa» compare il codice a barre.</Text>
-          ) : undefined
+          <>
+            <OffersBox />
+            {sorted.length ? (
+              <Text style={styles.intro}>Tocca un buono per modificarlo. Con «Mostra in cassa» compare il codice a barre.</Text>
+            ) : null}
+          </>
         }
         ListEmptyComponent={
           <View style={styles.empty}>

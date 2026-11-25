@@ -1,5 +1,15 @@
 # Conto Spesa — guida rapida
 
+## Novità versione 1.3 — offerte riservate
+- Al primo avvio: **«Sblocca e diventa Socio fondatore»** (accetta la condivisione anonima con un tocco) oppure «Continua senza condividere».
+- Scheda Buoni: sezione **🎁 Offerte riservate**, chiusa col 🔒 per chi non condivide; si sblocca con un tocco.
+- **Socio fondatore** ⭐: chi accetta entro il 30/06/2027 (data modificabile) vede per primo le offerte marcate `foundersOnly`.
+
+### Pubblicare un'offerta di un negozio partner (senza aggiornare l'app)
+1. Apri su GitHub il file `offers/offerte.json` del repository `conto-spesa` e premi la matita ✏️.
+2. Copia il blocco `_esempio` dentro `"offers": [ ... ]` e cambia i valori (importi in centesimi: 300 = 3 €).
+3. Premi **Commit changes**. Alla prossima apertura dell'app l'offerta compare a tutti quelli che hanno sbloccato le offerte.
+
 ## Novità versione 1.2
 - **Icona nuova** (lampadina Creaitivity con carrello) e schermata di avvio.
 - Ogni prodotto ha un **reparto** (proposto in automatico dal nome) e l'indicazione **Marca del negozio**. Tocca un prodotto nel carrello per correggerlo.

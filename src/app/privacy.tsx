@@ -27,6 +27,10 @@ const SECTIONS: { title: string; text: string }[] = [
     text: 'Solo se attivi questo secondo consenso, separato dal primo, le statistiche anonime e aggregate possono essere condivise, anche a titolo oneroso, con aziende della distribuzione organizzata per analisi di mercato e promozioni. Non vengono mai cedute informazioni che ti identificano.',
   },
   {
+    title: 'Offerte riservate',
+    text: 'Con il consenso ai negozi partner, all\'apertura l\'app scarica l\'elenco delle offerte da un file pubblico (GitHub). Per farlo il telefono si collega a quel servizio, che come ogni sito vede l\'indirizzo di rete; l\'app non invia altri dati. Lo stato di «Socio fondatore» resta solo sul telefono.',
+  },
+  {
     title: 'I tuoi diritti',
     text: 'Puoi revocare i consensi in qualsiasi momento da Profilo, senza conseguenze sull\'uso dell\'app: i dati non ancora inviati vengono cancellati subito. Puoi chiedere accesso, rettifica, cancellazione e reclamo al Garante per la protezione dei dati personali.',
   },

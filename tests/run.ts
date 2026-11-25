@@ -6,6 +6,7 @@ import { guessSegment } from '../src/features/catalog/segments';
 import { computeCouponProgress, couponsForStore, describeScope } from '../src/features/coupons/couponLogic';
 import { monthSummary } from '../src/features/history/types';
 import { extractProductName } from '../src/features/ocr/nameParser';
+import { parseOffersFile, visibleOffers } from '../src/features/offers/feed';
 import type { Coupon } from '../src/features/coupons/types';
 import { extractPriceCandidates, pickConfidentPrice } from '../src/features/ocr/priceParser';
 import { parseEuroInput } from '../src/lib/money';
@@ -233,7 +234,7 @@ t('descrizione ambito', () => {
 t('migrazione v1 → v2 conserva carrello e buoni', () => {
   const v1 = { schema: 1, items: [{ id: 'i', price: 100, qty: 2, source: 'manual', createdAt: 0 }], coupons: [cp(500, 50)], settings: { stackCoupons: true } };
   const s = migrate(v1);
-  assert.equal(s.schema, 2);
+  assert.equal(s.schema, 3);
   assert.equal(s.items.length, 1);
   assert.equal(s.coupons.length, 1);
   assert.equal(s.settings.stackCoupons, true);
@@ -257,6 +258,49 @@ t('consenso: dato e poi revocato svuota la coda', () => {
   assert.ok(s.consent.updatedAt && s.consent.policyVersion);
   s = reducer(s, { type: 'consent/set', patch: { stats: false } });
   assert.equal(s.analyticsQueue.length, 0);
+});
+
+// --- offerte riservate (file online) e Socio fondatore ---
+t('offerte: file letto in modo tollerante', () => {
+  const file = JSON.parse(require('fs').readFileSync('offers/offerte.json', 'utf8'));
+  assert.deepEqual(parseOffersFile(file), []);
+  const list = parseOffersFile({
+    offers: [
+      file._esempio,
+      { id: 'rotta', title: 'senza valore' , value: 'abc' },
+      { id: 'perc', title: '200%', kind: 'percent', value: 200 },
+      { title: 'senza id', value: 100 },
+    ],
+  });
+  assert.equal(list.length, 1);
+  assert.deepEqual(list[0].scope, { kind: 'segments', segments: ['carne'] });
+  assert.equal(list[0].foundersOnly, true);
+});
+t('offerte: solo fondatori e non scadute', () => {
+  const offers = parseOffersFile({ offers: [
+    { id: 'a', title: 'A', value: 100, foundersOnly: true },
+    { id: 'b', title: 'B', value: 100, expiresOn: '2020-01-01' },
+    { id: 'c', title: 'C', value: 100 },
+  ] });
+  assert.deepEqual(visibleOffers(offers, false).map((o) => o.id), ['c']);
+  assert.deepEqual(visibleOffers(offers, true).map((o) => o.id), ['a', 'c']);
+});
+t('consenso partner → Socio fondatore, prendi offerta una sola volta', () => {
+  let s = reducer(initialState, { type: 'consent/set', patch: { partners: true } });
+  assert.ok(s.founderSince);
+  const since = s.founderSince;
+  s = reducer(s, { type: 'consent/set', patch: { partners: false } });
+  s = reducer(s, { type: 'consent/set', patch: { partners: true } });
+  assert.equal(s.founderSince, since);
+  const [offer] = parseOffersFile({ offers: [{ id: 'x', title: 'X', value: 300, minSpend: 1500, code: 'X3' }] });
+  s = reducer(s, { type: 'offer/claim', offer });
+  s = reducer(s, { type: 'offer/claim', offer });
+  assert.equal(s.coupons.length, 1);
+  assert.deepEqual([s.coupons[0].source, s.coupons[0].offerId, s.coupons[0].code], ['partner', 'x', 'X3']);
+});
+t('migrazione v2 → v3 aggiunge le offerte', () => {
+  const s = migrate({ schema: 2, onboarded: true, items: [], coupons: [], history: [], settings: {}, consent: { stats: true, partners: false }, analyticsQueue: [] });
+  assert.deepEqual([s.schema, s.offers.length, s.consent.stats], [3, 0, true]);
 });
 
 console.log(`\n${passed} test superati`);

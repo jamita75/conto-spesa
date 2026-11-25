@@ -22,6 +22,15 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: space(4), paddingBottom: space(10) }}>
+      {state.founderSince ? (
+        <Card style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent }}>
+          <Text style={{ fontSize: font.big, fontWeight: '800', color: colors.text }}>⭐ Socio fondatore</Text>
+          <Text style={ui.help}>
+            Dal {new Date(state.founderSince).toLocaleDateString('it-IT')}: hai accesso anticipato alle offerte dei negozi partner.
+          </Text>
+        </Card>
+      ) : null}
+
       <SectionTitle>Fotocamera</SectionTitle>
       <Card>
         <SwitchRow

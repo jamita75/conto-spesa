@@ -4,6 +4,7 @@ import { NO_CONSENT, PRIVACY_POLICY_VERSION, type Consent } from '../features/co
 import { computeCouponProgress, couponsForStore } from '../features/coupons/couponLogic';
 import type { Coupon } from '../features/coupons/types';
 import type { ShoppingSession } from '../features/history/types';
+import { isFounderEligible, offerToCoupon, type PartnerOffer } from '../features/offers/feed';
 import { CHAINS, type Store } from '../features/store/types';
 
 /**
@@ -31,9 +32,14 @@ export type AppState = {
   consent: Consent;
   /** record anonimi in attesa di invio (solo con consenso) */
   analyticsQueue: AnonymousPurchase[];
+  /** «Socio fondatore»: data in cui ha accettato la condivisione entro la scadenza della promozione */
+  founderSince?: number;
+  /** offerte dei negozi partner lette dal file online (copia locale) */
+  offers: PartnerOffer[];
+  offersFetchedAt?: number;
 };
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const STORAGE_KEY = 'conto-spesa/state';
 const HISTORY_LIMIT = 500;
 
@@ -46,6 +52,7 @@ export const initialState: AppState = {
   settings: { stackCoupons: false, autoScan: true },
   consent: NO_CONSENT,
   analyticsQueue: [],
+  offers: [],
 };
 
 export type Action =
@@ -63,7 +70,9 @@ export type Action =
   | { type: 'coupon/remove'; id: string }
   | { type: 'settings/update'; patch: Partial<Settings> }
   | { type: 'consent/set'; patch: Partial<Pick<Consent, 'stats' | 'partners'>> }
-  | { type: 'data/wipe' };
+  | { type: 'data/wipe' }
+  | { type: 'offers/set'; offers: PartnerOffer[] }
+  | { type: 'offer/claim'; offer: PartnerOffer };
 
 export const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -139,9 +148,13 @@ export function reducer(state: AppState, action: Action): AppState {
       };
       // revoca: i dati in coda non ancora inviati vengono cancellati subito
       const revoked = !consent.stats && !consent.partners;
+      // primo consenso ai partner entro la data della promozione → Socio fondatore (resta per sempre)
+      const founderSince =
+        state.founderSince ?? (consent.partners && isFounderEligible() ? Date.now() : undefined);
       return {
         ...state,
         consent,
+        founderSince,
         analyticsQueue: revoked
           ? []
           : state.analyticsQueue.map((r) => ({ ...r, shareWithPartners: r.shareWithPartners && consent.partners })),
@@ -149,6 +162,11 @@ export function reducer(state: AppState, action: Action): AppState {
     }
     case 'data/wipe':
       return { ...initialState, onboarded: true };
+    case 'offers/set':
+      return { ...state, offers: action.offers, offersFetchedAt: Date.now() };
+    case 'offer/claim':
+      if (state.coupons.some((c) => c.offerId === action.offer.id)) return state;
+      return { ...state, coupons: [...state.coupons, { ...offerToCoupon(action.offer), id: newId() }] };
     default:
       return state;
   }
@@ -158,6 +176,9 @@ export function migrate(saved: any): AppState {
   if (!saved || typeof saved !== 'object') return initialState;
   const from = Number(saved.schema ?? 1);
   let s = { ...saved };
+  if (from < 3) {
+    s = { ...s, offers: s.offers ?? [] };
+  }
   if (from < 2) {
     // v1 → v2: arrivano negozio, storico, consensi. Chi aveva già la v1 ha già visto l'app.
     s = { ...s, onboarded: true, history: [], consent: NO_CONSENT, analyticsQueue: [] };

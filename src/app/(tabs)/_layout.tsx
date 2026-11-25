@@ -1,9 +1,10 @@
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { daysToExpiry } from '../../features/coupons/couponLogic';
+import { fetchOffers } from '../../features/offers/feed';
 import { colors } from '../../lib/theme';
 import { useStore } from '../../store/AppStore';
 
@@ -13,7 +14,20 @@ const icon = (emoji: string) =>
   };
 
 export default function TabsLayout() {
-  const { state, ready } = useStore();
+  const { state, dispatch, ready } = useStore();
+  const partners = state.consent.partners;
+
+  // legge le offerte riservate dal file online (nessun aggiornamento dell'app necessario)
+  useEffect(() => {
+    if (!ready || !partners) return;
+    let alive = true;
+    fetchOffers().then((offers) => {
+      if (alive && offers) dispatch({ type: 'offers/set', offers });
+    });
+    return () => {
+      alive = false;
+    };
+  }, [ready, partners, dispatch]);
   // spazio occupato dai pulsanti di sistema Android (o dalla barra gesti / iPhone)
   const insets = useSafeAreaInsets();
   if (!ready) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
