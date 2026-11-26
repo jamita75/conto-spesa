@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Conto Spesa – Statistiche
  * Description: Riceve le statistiche d'acquisto pseudonime dell'app Conto Spesa (solo da chi ha dato il consenso), mostra la dashboard e produce report aggregati per i negozi partner.
- * Version: 1.0.1
+ * Version: 1.0.2
  * Author: Creaitivity
  * Requires PHP: 7.4
  * Requires at least: 6.0
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-define('CS_VERSION', '1.0.1');
+define('CS_VERSION', '1.0.2');
 define('CS_DB_VERSION', '1');
 /** chiave condivisa con l'app (filtro anti-spam; deve coincidere con APP_KEY in src/features/analytics/uploader.ts) */
 define('CS_APP_KEY', '2f596d4986ea489f344e7ee39541fae7');
@@ -569,8 +569,8 @@ add_shortcode(
 <p>Solo statistiche <strong>aggregate</strong> (per insegna e reparto) che riguardano almeno {$k} persone diverse. Mai il codice, mai le singole spese.</p>
 <h3>Dove e per quanto</h3>
 <p>I dati sono conservati sul server del titolare in Italia, per {$m} mesi, poi cancellati automaticamente. Il fornitore di hosting agisce come responsabile del trattamento. Come ogni sito, il server può registrare l'indirizzo di rete nei registri tecnici del fornitore; il sistema di raccolta non lo salva.</p>
-<h3>Offerte riservate</h3>
-<p>Con il consenso ai partner l'app scarica l'elenco delle offerte da un file pubblico ospitato su GitHub; il telefono si collega a quel servizio come a un normale sito.</p>
+<h3>Buoni dei negozi partner</h3>
+<p>Con l'autorizzazione ai partner l'app scarica l'elenco dei buoni sconto da un file pubblico ospitato su GitHub; il telefono si collega a quel servizio come a un normale sito. La data dell'autorizzazione resta solo sul telefono.</p>
 <h3>I tuoi diritti</h3>
 <p>Dall'app (Profilo) puoi in ogni momento revocare i consensi, scaricare i tuoi dati e cancellarli dal server: alla revoca il codice viene eliminato e i dati collegati vengono cancellati. Puoi esercitare i diritti di accesso, rettifica, cancellazione, limitazione, portabilità e opposizione scrivendo a {$email}, e proporre reclamo al Garante per la protezione dei dati personali. Il servizio è riservato a chi ha almeno 14 anni.</p>
 </div>
