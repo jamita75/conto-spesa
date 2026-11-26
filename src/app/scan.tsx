@@ -26,7 +26,10 @@ import { colors, radius, space } from '../lib/theme';
 import { newId, useStore } from '../store/AppStore';
 import { cartCoupons } from '../store/reducer';
 
-type Phase = { kind: 'camera' } | { kind: 'reading' } | { kind: 'confirm'; candidates: PriceCandidate[]; name?: string };
+type Phase =
+  | { kind: 'camera' }
+  | { kind: 'reading' }
+  | { kind: 'confirm'; candidates: PriceCandidate[]; name?: string; lines?: string[] };
 type Toast = { id: string; price: Cents; qty: number; label?: string };
 
 /** pausa tra una lettura automatica e la successiva */
@@ -102,7 +105,7 @@ export default function ScanScreen() {
         try {
           const photo = await camera.current.takePictureAsync({ quality: 0.5, shutterSound: false });
           if (!alive || !photo) return;
-          const lines = await recognizeText(photo.uri);
+          const lines = await recognizeText(photo.uri, photo, false);
           const pick = pickConfidentPrice(extractPriceCandidates(lines));
           if (!alive) return;
 
@@ -171,8 +174,8 @@ export default function ScanScreen() {
     try {
       busy.current = true;
       const photo = await camera.current.takePictureAsync({ quality: 0.7, shutterSound: false });
-      const lines = await recognizeText(photo.uri);
-      setPhase({ kind: 'confirm', candidates: extractPriceCandidates(lines), name: extractProductName(lines) });
+      const lines = await recognizeText(photo.uri, photo, true);
+      setPhase({ kind: 'confirm', candidates: extractPriceCandidates(lines), name: extractProductName(lines), lines });
     } catch {
       setPhase({ kind: 'confirm', candidates: [] });
     } finally {
@@ -298,6 +301,7 @@ export default function ScanScreen() {
                 {ocr ? 'Prezzo non letto con sicurezza: scrivilo qui sotto o riprova avvicinandoti.' : 'Scrivi il prezzo:'}
               </Text>
             ) : null}
+            {ocr && phase.lines ? <ReadText lines={phase.lines} /> : null}
             <ItemEditor
               key={phase.candidates.map((c) => c.cents).join('-') + (phase.name ?? '')}
               candidates={phase.candidates}
@@ -333,6 +337,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.9)',
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
+  readBox: { marginBottom: space(3), padding: space(3), borderRadius: radius.md, backgroundColor: '#F1F3F0' },
+  readTitle: { fontSize: 14, fontWeight: '700', color: '#5E6A62' },
+  readText: { fontSize: 13, color: '#1B2420', marginTop: space(2), lineHeight: 19 },
   hint: { color: '#fff', marginTop: space(3), fontSize: 15, fontWeight: '600', textAlign: 'center', paddingHorizontal: space(8) },
   topBar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space(4) },
   roundBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
@@ -369,3 +376,20 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: colors.bg, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg },
   noRead: { fontSize: 14, color: colors.muted },
 });
+
+/** «Cosa ha letto il telefono»: aiuta a capire se il cartellino non si vede (contrasto, riflessi) o se è letto male */
+function ReadText({ lines }: { lines: string[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Pressable onPress={() => setOpen((v) => !v)} style={styles.readBox} accessibilityRole="button">
+      <Text style={styles.readTitle}>{open ? '▾' : '▸'} Cosa ha letto il telefono</Text>
+      {open ? (
+        <Text style={styles.readText} selectable>
+          {lines.length
+            ? lines.join('  ·  ')
+            : 'Niente: il cartellino non si vede bene. Avvicinati, inclina un po\' il telefono per togliere i riflessi, spegni la torcia sui cartellini elettronici e tieni il cartellino dentro il riquadro.'}
+        </Text>
+      ) : null}
+    </Pressable>
+  );
+}

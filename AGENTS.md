@@ -63,7 +63,8 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
 
 ### Regole
 - Importi SEMPRE in centesimi interi (`Cents`), formattazione con `formatEuro`.
-- OCR solo tramite `src/features/ocr/recognizer.ts` (on-device). Deve restare opzionale (Expo Go → inserimento manuale).
+- OCR solo tramite `src/features/ocr/recognizer.ts` (on-device): legge anche un ritaglio ingrandito del riquadro
+  (`centerCrop`, expo-image-manipulator) per i cartellini a basso contrasto; nello scatto manuale si vede «Cosa ha letto il telefono». Deve restare opzionale (Expo Go → inserimento manuale).
 - Privacy: due consensi separati, spenti di default, revocabili. Al primo consenso nasce un codice casuale
   (`pid`, pseudonimo = dato personale). Revoca totale / «Cancella tutto» → `pendingOps` forget verso il server.
   Ogni modifica ai consensi passa da `consentAction()` (store/actions.ts). Invio: `store/useServerSync.ts` +
