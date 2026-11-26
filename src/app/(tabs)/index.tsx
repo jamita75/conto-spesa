@@ -3,6 +3,8 @@ import { router } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BudgetBar } from '../../components/BudgetBar';
+import { SponsoredCard } from '../../components/SponsoredCard';
+import { UpdateBanner } from '../../components/UpdateGate';
 import { CouponLine } from '../../components/CouponLine';
 import { CouponPicker } from '../../components/CouponPicker';
 import { cartCount, cartSubtotal, type CartItem } from '../../features/cart/types';
@@ -106,6 +108,7 @@ export default function CartScreen() {
         ) : null}
       </View>
 
+      <UpdateBanner />
       <BudgetBar budget={state.settings.budget} toPay={progress.toPay} />
 
       {selectable.length ? (
@@ -128,6 +131,7 @@ export default function CartScreen() {
         data={state.items}
         keyExtractor={(i) => i.id}
         ListHeaderComponent={header}
+        ListFooterComponent={<SponsoredCard chain={state.store?.chain} />}
         contentContainerStyle={{ paddingBottom: 120 }}
         ListEmptyComponent={
           <View style={styles.empty}>

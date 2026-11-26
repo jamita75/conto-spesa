@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { buildAnonymousRecord } from '../src/features/analytics/collector';
 import { makeBarcode } from '../src/features/barcode/encode';
 import { budgetStatus, budgetWorsened } from '../src/features/budget/budget';
+import { parseRemoteConfig, pickSponsored, updateNeed } from '../src/features/remote/config';
 import { guessPrivateLabel } from '../src/features/catalog/privateLabel';
 import { guessSegment } from '../src/features/catalog/segments';
 import {
@@ -447,6 +448,38 @@ t('lista buoni ordinata per stato e scadenza', () => {
   assert.deepEqual(sortCoupons(list, today).map((c) => c.id), ['vicino', 'lontano', 'futuro', 'spento', 'scaduto', 'usato']);
   assert.equal(couponState(list[0], today), 'used');
   assert.equal(couponState(list[3], today), 'upcoming');
+});
+
+// --- configurazione a distanza: aggiornamento obbligatorio e spazi sponsorizzati ---
+t('aggiornamento: obbligatorio, suggerito, mai senza versione nota', () => {
+  const c = parseRemoteConfig({ minVersionCode: 15, latestVersionCode: 18 });
+  assert.equal(updateNeed(14, c), 'force');
+  assert.equal(updateNeed(15, c), 'suggest');
+  assert.equal(updateNeed(18, c), null);
+  assert.equal(updateNeed(null, c), null);
+  assert.equal(updateNeed(14, parseRemoteConfig('rotto')), null);
+  assert.equal(parseRemoteConfig({ updateUrl: 'http://non-sicuro' }).updateUrl.startsWith('https://github.com'), true);
+});
+t('spazio sponsorizzato: spento di base, date, insegna, uno solo', () => {
+  const raw = {
+    ads: {
+      enabled: true,
+      items: [
+        { id: 'a', advertiser: 'Forno', title: 'Pane', startsOn: '2026-12-01', endsOn: '2026-12-31' },
+        { id: 'b', advertiser: 'Conad X', title: 'Solo Conad', chain: 'Conad' },
+        { id: 'c', advertiser: 'Senza titolo' },
+        { id: 'd', advertiser: 'Link', title: 'Insicuro', url: 'javascript:alert(1)' },
+      ],
+    },
+  };
+  const c = parseRemoteConfig(raw);
+  assert.equal(c.sponsored.length, 3);
+  assert.equal(c.sponsored.find((x) => x.id === 'd')!.url, undefined);
+  const dic = new Date(2026, 11, 10);
+  assert.equal(pickSponsored(c, 'conad', dic)!.id, 'b');
+  assert.notEqual(pickSponsored(c, 'Coop', dic)!.id, 'b');
+  assert.equal(pickSponsored(parseRemoteConfig({ ads: { enabled: true, items: [raw.ads.items[0]] } }), undefined, new Date(2027, 0, 5)), null);
+  assert.equal(pickSponsored(parseRemoteConfig({ ...raw, ads: { ...raw.ads, enabled: false } }), 'Conad', dic), null);
 });
 
 console.log(`\n${passed} test superati`);

@@ -1,0 +1,22 @@
+{
+  "_istruzioni": "File letto dall'app a ogni apertura. minVersionCode: le versioni più vecchie si bloccano finché non si aggiorna. latestVersionCode: le versioni più vecchie vedono solo un invito ad aggiornare. ads.enabled: accende gli spazi sponsorizzati (uno alla volta, con scritta Sponsorizzato). Date nel formato AAAA-MM-GG. Il versionCode è in app.json → android.versionCode.",
+  "minVersionCode": 0,
+  "latestVersionCode": 0,
+  "updateUrl": "https://github.com/jamita75/conto-spesa/releases/latest",
+  "updateMessage": "",
+  "ads": {
+    "enabled": false,
+    "items": []
+  },
+  "_esempio_spazio": {
+    "id": "pescheria-rossi-dic26",
+    "advertiser": "Pescheria Rossi, Fermo",
+    "title": "Venerdì pesce fresco -10%",
+    "text": "Mostra l'app alla cassa del banco pesce.",
+    "url": "https://www.esempio.it",
+    "cta": "Vedi dove siamo",
+    "chain": "",
+    "startsOn": "2026-12-01",
+    "endsOn": "2026-12-31"
+  }
+}

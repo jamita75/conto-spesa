@@ -8,6 +8,8 @@ on:
     # le modifiche solo al plugin del sito o alla documentazione non rifanno l'APK
     paths-ignore:
       - 'server/**'
+      - 'config/**'
+      - 'offers/**'
       - 'docs/**'
       - '**.md'
   workflow_dispatch:

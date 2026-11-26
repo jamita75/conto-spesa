@@ -87,6 +87,11 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
   sconto che non conosci», pulsante che dice chiaramente che serve l'autorizzazione («✓ Autorizzo: voglio i buoni»).
   Testi secondo i principi di Oren Klaff: brevi, concreti, novità/curiosità, mai supplicare; ma niente falsa scarsità e
   rifiuto sempre con la stessa evidenza (consenso libero, GDPR).
+- Configurazione a distanza: `config/app.json` (letto da `CONFIG_URL` all'apertura e al ritorno in primo piano,
+  `store/RemoteConfig.tsx`). `minVersionCode` > versionCode installato → `UpdateGate` blocca l'app con «Scarica
+  l'aggiornamento»; `latestVersionCode` → `UpdateBanner` chiudibile. A ogni nuova versione alzare `android.versionCode`.
+  Spazi sponsorizzati: `ads.enabled` + `ads.items` → `SponsoredCard` (uno solo, in fondo alla Spesa, «Sponsorizzato · …»,
+  nessun tracciamento). Modifiche a `config/`, `offers/`, `server/` non rifanno l'APK.
 - Regola generale: funzionalità e facilità d'uso prima di tutto, qualsiasi utente deve riuscire a usare l'app.
 - Icona: sorgenti SVG in `assets/source/` (lampadina bicolore Creaitivity arancio/blu con carrello e €).
 - Ogni nuova funzione: cartella in `src/features/`, logica pura + test in `tests/run.ts`, poi la schermata.
