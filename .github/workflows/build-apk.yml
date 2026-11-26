@@ -5,6 +5,11 @@ name: Build APK
 on:
   push:
     branches: [main]
+    # le modifiche solo al plugin del sito o alla documentazione non rifanno l'APK
+    paths-ignore:
+      - 'server/**'
+      - 'docs/**'
+      - '**.md'
   workflow_dispatch:
 
 permissions:

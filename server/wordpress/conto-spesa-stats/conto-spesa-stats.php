@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Conto Spesa – Statistiche
  * Description: Riceve le statistiche d'acquisto pseudonime dell'app Conto Spesa (solo da chi ha dato il consenso), mostra la dashboard e produce report aggregati per i negozi partner.
- * Version: 1.0.2
+ * Version: 1.1.0
  * Author: Creaitivity
  * Requires PHP: 7.4
  * Requires at least: 6.0
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-define('CS_VERSION', '1.0.2');
+define('CS_VERSION', '1.1.0');
 define('CS_DB_VERSION', '1');
 /** chiave condivisa con l'app (filtro anti-spam; deve coincidere con APP_KEY in src/features/analytics/uploader.ts) */
 define('CS_APP_KEY', '2f596d4986ea489f344e7ee39541fae7');
@@ -548,6 +548,8 @@ add_action(
 /* ------------------------------------------------------------------ */
 /* Informativa pubblica: [contospesa_informativa]                      */
 /* ------------------------------------------------------------------ */
+
+require_once __DIR__ . '/analisi.php';
 
 add_shortcode(
 	'contospesa_informativa',

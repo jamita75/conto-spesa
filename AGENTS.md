@@ -67,8 +67,9 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
 - Privacy: due consensi separati, spenti di default, revocabili. Al primo consenso nasce un codice casuale
   (`pid`, pseudonimo = dato personale). Revoca totale / «Cancella tutto» → `pendingOps` forget verso il server.
   Ogni modifica ai consensi passa da `consentAction()` (store/actions.ts). Invio: `store/useServerSync.ts` +
-  `features/analytics/uploader.ts` → plugin WordPress in `server/wordpress/conto-spesa-stats/` (test: `php /tmp/...`
-  harness non incluso; `php -l` obbligatorio). Se cambia cosa si raccoglie: nuova versione informativa + riconferma.
+  `features/analytics/uploader.ts` → plugin WordPress in `server/wordpress/conto-spesa-stats/` (test in `server/wordpress/tests/`:
+  `api-harness.php` senza database, `analisi-mariadb.php` con MariaDB locale; `php -l` obbligatorio). Pagina admin
+  «Analisi dettagliata» in `analisi.php`: ogni sezione = funzione che dà colonne+righe (tabella e CSV). Se cambia cosa si raccoglie: nuova versione informativa + riconferma.
   Checklist legale: `docs/PRIVACY-CHECKLIST.md`.
 - Buoni: ambito `scope` (tutta la spesa / marca del negozio / altre marche / reparti), `startsOn` + `expiresOn`.
   La spesa minima di un buono con ambito conta solo i prodotti del suo ambito (`eligibleSubtotal`).
