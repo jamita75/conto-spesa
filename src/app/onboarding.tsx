@@ -41,10 +41,10 @@ export default function Onboarding() {
       ) : (
         <>
           <Text style={styles.logo}>🎁</Text>
-          <Text style={styles.title}>Scopri buoni sconto che non conosci</Text>
+          <Text style={styles.title}>Ci sono buoni sconto che non conosci</Text>
           <Text style={styles.subtitle}>
-            Ricevi nell'app i buoni dei negozi partner, anche quelli che non trovi sul volantino. Per mandarteli serve la tua
-            autorizzazione a usare in forma anonima cosa compri.
+            Li ricevi qui nell'app, prima di fare la spesa. Serve solo la tua autorizzazione a usare in forma anonima cosa
+            compri.
           </Text>
 
           <Card style={{ marginTop: space(6) }}>
@@ -79,7 +79,7 @@ export default function Onboarding() {
             <>
               {/* «Accetta» e «Rifiuta» con la stessa evidenza: il consenso deve essere libero (GDPR) */}
               <BigButton
-                label="✓ Autorizzo e ricevo i buoni"
+                label="✓ Autorizzo: voglio i buoni"
                 onPress={() => {
                   dispatch(consentAction({ stats: true, partners: true }));
                   finish();

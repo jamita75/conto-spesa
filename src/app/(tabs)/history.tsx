@@ -76,7 +76,7 @@ export default function HistoryScreen() {
           {!state.consent.partners && summary.count > 0 ? (
             <Pressable style={styles.teaser} onPress={() => router.push('/(tabs)/coupons')}>
               <Text style={styles.teaserText}>
-                🎁 Scopri buoni sconto che non conosci: con la tua autorizzazione li ricevi qui. Tocca per vederli.
+                🎁 Ci sono buoni sconto che non conosci. Autorizza e li ricevi qui.
               </Text>
             </Pressable>
           ) : null}

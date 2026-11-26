@@ -24,8 +24,8 @@ export function OffersBox() {
         style={[styles.box, styles.locked]}
         onPress={() =>
           Alert.alert(
-            'Vuoi ricevere nuovi buoni sconto?',
-            'Per mandarti qui i buoni dei negozi partner ci serve la tua autorizzazione a usare in forma anonima cosa compri (mai nome, telefono o posizione). Puoi toglierla quando vuoi dal Profilo. Confermi di avere almeno 14 anni.',
+            'Ricevi i buoni nuovi?',
+            'Ci autorizzi a usare in forma anonima cosa compri (mai nome, telefono o posizione) e ti mandiamo qui i buoni dei negozi partner. Revochi quando vuoi dal Profilo. Confermi di avere almeno 14 anni.',
             [
               { text: 'Non ora', style: 'cancel' },
               {
@@ -41,10 +41,10 @@ export function OffersBox() {
       >
         <Text style={styles.lock}>🎁</Text>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Scopri buoni sconto che non conosci</Text>
-          <Text style={styles.text}>I negozi partner hanno buoni che forse non hai ancora. Per riceverli qui serve la tua autorizzazione.</Text>
+          <Text style={styles.title}>Ci sono buoni sconto che non conosci</Text>
+          <Text style={styles.text}>Li ricevi qui, prima di fare la spesa. Serve solo la tua autorizzazione.</Text>
           <View style={styles.cta}>
-            <Text style={styles.ctaText}>✓ Autorizzo e ricevo i buoni</Text>
+            <Text style={styles.ctaText}>✓ Autorizzo: voglio i buoni</Text>
           </View>
         </View>
       </Pressable>
@@ -57,12 +57,12 @@ export function OffersBox() {
   return (
     <View style={[styles.box, styles.open]}>
       <View style={styles.head}>
-        <Text style={styles.title}>🎁 Buoni che non conoscevi</Text>
+        <Text style={styles.title}>🎁 I tuoi buoni nuovi</Text>
       </View>
 
       {offers.length === 0 ? (
         <Text style={styles.text}>
-          Appena un negozio partner attiva un nuovo buono lo trovi qui: torna a dare un'occhiata prima della spesa.
+          Quando un negozio attiva un buono nuovo, compare qui. Guarda prima di ogni spesa.
         </Text>
       ) : (
         offers.map((o) => {

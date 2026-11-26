@@ -82,8 +82,10 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
 - Prezzi: il parser gestisce cartellini da scaffale ed etichette del fresco pesato (peso, €/kg, «da pagare»).
 - Offerte riservate: `offers/offerte.json` nel repo (letto da `OFFERS_URL` all'apertura, solo con consenso partner).
   Si pubblicano offerte modificando quel file, senza aggiornare l'app. `founderSince` (consenso partner entro `FOUNDER_UNTIL`)
-  resta solo interno: NON mostrare «Socio fondatore» né «offerte riservate». Linguaggio: invito all'azione, «Scopri buoni
-  sconto che non conosci», pulsante che dice chiaramente che serve l'autorizzazione («✓ Autorizzo e ricevo i buoni»).
+  resta solo interno: NON mostrare «Socio fondatore» né «offerte riservate». Linguaggio: invito all'azione, «Ci sono buoni
+  sconto che non conosci», pulsante che dice chiaramente che serve l'autorizzazione («✓ Autorizzo: voglio i buoni»).
+  Testi secondo i principi di Oren Klaff: brevi, concreti, novità/curiosità, mai supplicare; ma niente falsa scarsità e
+  rifiuto sempre con la stessa evidenza (consenso libero, GDPR).
 - Regola generale: funzionalità e facilità d'uso prima di tutto, qualsiasi utente deve riuscire a usare l'app.
 - Icona: sorgenti SVG in `assets/source/` (lampadina bicolore Creaitivity arancio/blu con carrello e €).
 - Ogni nuova funzione: cartella in `src/features/`, logica pura + test in `tests/run.ts`, poi la schermata.
