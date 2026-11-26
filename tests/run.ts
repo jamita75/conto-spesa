@@ -18,7 +18,7 @@ import { monthSummary } from '../src/features/history/types';
 import { extractProductName } from '../src/features/ocr/nameParser';
 import { parseOffersFile, visibleOffers } from '../src/features/offers/feed';
 import type { Coupon } from '../src/features/coupons/types';
-import { extractPriceCandidates, pickConfidentPrice } from '../src/features/ocr/priceParser';
+import { extractPriceCandidates, extractQuantities, pickConfidentPrice } from '../src/features/ocr/priceParser';
 import { parseEuroInput } from '../src/lib/money';
 import { initialState, migrate, reducer } from '../src/store/reducer';
 
@@ -480,6 +480,38 @@ t('spazio sponsorizzato: spento di base, date, insegna, uno solo', () => {
   assert.notEqual(pickSponsored(c, 'Coop', dic)!.id, 'b');
   assert.equal(pickSponsored(parseRemoteConfig({ ads: { enabled: true, items: [raw.ads.items[0]] } }), undefined, new Date(2027, 0, 5)), null);
   assert.equal(pickSponsored(parseRemoteConfig({ ...raw, ads: { ...raw.ads, enabled: false } }), 'Conad', dic), null);
+});
+
+// --- cartellini elettronici a segmenti (Conad/Hanshow): euro grandi + centesimi piccoli senza virgola ---
+const esl = (lines: string[]) => {
+  const c = extractPriceCandidates(lines);
+  return { top: c.filter((x) => !x.isUnitPrice)[0]?.cents, auto: pickConfidentPrice(c)?.cents };
+};
+t('cartellino elettronico: "279" con 11,63 €/kg e 240 g → 2,79 automatico', () => {
+  const r = esl(['240 g', '11', '63', '€', '/Kg', '279', '€', 'RIGAT.100% F.PISELL.PER SCELTA G240', '8054890580939', 'R 80237510 IMB.12/1']);
+  assert.equal(r.top, 279);
+  assert.equal(r.auto, 279);
+});
+t('cartellino elettronico: euro e centesimi su righe diverse', () => {
+  assert.equal(esl(['1163', '€/Kg', '2', '79', '€', 'LACCETTTI 100% F.LENT.PER SCEL.G240']).auto, 279);
+  assert.equal(esl(['11 63 2 79', '€ €', '/Kg', 'RIGAT.100% F.PISELL.PER SCELTA G240']).auto, 279);
+});
+t('cartellino elettronico: cifre lette come lettere + confezione 6x33cl', () => {
+  assert.equal(esl(['1 31', '€', 'Z 59', '€x', 'COLA ZERO ZUCCHERI CONAD CL33X6 LAT', '8003170074606']).auto, 259);
+  assert.equal(esl(['6x33cl', '131', '259', '€x', 'COLA ZERO ZUCCHERI CONAD CL33X6 LAT']).auto, 259);
+});
+t('prezzo grande illeggibile: calcolato da €/kg × peso, ma da confermare', () => {
+  const r = esl(['11 63', '€/Kg', 'RIGAT.100% F.PISELL.PER SCELTA G240', '8054890580939']);
+  assert.equal(r.top, 279);
+  assert.equal(r.auto, undefined);
+});
+t('quantità dal nome del cartellino', () => {
+  assert.deepEqual(extractQuantities(['COLA ZERO CL33X6 LAT']), [1.98]);
+  assert.deepEqual(extractQuantities(['RIGAT. G240']), [0.24]);
+  assert.deepEqual(extractQuantities(['Acqua 1,5 L']), [1.5]);
+});
+t('nome dal cartellino elettronico (con «100%» nel nome)', () => {
+  assert.equal(extractProductName(['HANSHOW', '1163', '€/Kg', '279', 'RIGAT.100% F.PISELL.PER SCELTA G240', '8054890580939']), 'Rigat.100% f.pisell.per scelta g240');
 });
 
 console.log(`\n${passed} test superati`);

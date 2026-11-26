@@ -80,7 +80,9 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
   azzerato a fine spesa). Usare SEMPRE `cartCoupons` per totale/limite/avvisi. `CouponPicker` nella Spesa; avviso
   «buono sbloccato» in `store/useCouponAlerts.ts`; a fine spesa `markUsed` spegne i buoni applicati e salva `usedOn`.
   Scheda Buoni a sezioni (`sortCoupons`/`couponState`): da usare, più avanti, spenti, scaduti, già usati.
-- Prezzi: il parser gestisce cartellini da scaffale ed etichette del fresco pesato (peso, €/kg, «da pagare»).
+- Prezzi: il parser gestisce cartellini da scaffale, etichette del fresco pesato (peso, €/kg, «da pagare») e cartellini
+  elettronici a segmenti (Conad/Hanshow: «279», «2»+«79», cifre lette come lettere). Controllo incrociato prezzo =
+  €/kg (o €/l) × confezione letta dal nome (`extractQuantities`: G240, CL33X6, 1,5 L): conferma il prezzo giusto o lo calcola.
 - Offerte riservate: `offers/offerte.json` nel repo (letto da `OFFERS_URL` all'apertura, solo con consenso partner).
   Si pubblicano offerte modificando quel file, senza aggiornare l'app. `founderSince` (consenso partner entro `FOUNDER_UNTIL`)
   resta solo interno: NON mostrare «Socio fondatore» né «offerte riservate». Linguaggio: invito all'azione, «Ci sono buoni

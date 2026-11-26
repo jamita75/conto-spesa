@@ -5,7 +5,7 @@
  * l'utente può sempre correggerlo.
  */
 const STOP_WORDS =
-  /\b(prezzo|offerta|promo|sconto|risparmi|euro|eur|al\s*kg|al\s*lt|al\s*litro|kg|cod|codice|art|lotto|scad|scadenza|iva|valido|fino|dal|al\b|carta|tessera|fedelt|soci|cad|pz|confezione|conf\b|confezionato|consumarsi|entro|peso|netto|tara|ean|sottocosto|prendi|paghi|anzich|invece|prima|ora\b|solo)\b/i;
+  /\b(prezzo|offerta|promo|sconto|risparmi|euro|eur|al\s*kg|al\s*lt|al\s*litro|kg|cod|codice|art|lotto|scad|scadenza|iva|valido|fino|dal|al\b|carta|tessera|fedelt|soci|cad|pz|confezione|conf\b|confezionato|consumarsi|entro|peso|netto|tara|ean|sottocosto|prendi|paghi|anzich|invece|prima|ora\b|solo|hanshow|vusion|ses|imagotag|pricer|imb)\b/i;
 const PRICE_LIKE = /\d+\s?[.,]\s?\d{2}/;
 
 export function extractProductName(lines: string[]): string | undefined {
@@ -14,7 +14,8 @@ export function extractProductName(lines: string[]): string | undefined {
   lines.forEach((raw, index) => {
     const line = raw.replace(/\s+/g, ' ').trim();
     if (line.length < 3 || line.length > 60) return;
-    if (PRICE_LIKE.test(line) || /[%€]/.test(line)) return;
+    // «100%» nel nome è normale (es. «100% farina di piselli»); «-30%» invece è uno sconto
+    if (PRICE_LIKE.test(line) || /€/.test(line) || /-\s*\d+\s*%/.test(line)) return;
     if (STOP_WORDS.test(line)) return;
 
     const letters = (line.match(/[A-Za-zÀ-ÿ]/g) ?? []).length;
@@ -24,8 +25,9 @@ export function extractProductName(lines: string[]): string | undefined {
     const upper = (line.match(/[A-ZÀ-Ý]/g) ?? []).length;
     let score = Math.min(letters, 30);
     if (upper / letters > 0.7) score += 8; // i nomi sui cartellini sono spesso in maiuscolo
-    score -= index * 2; // il nome di solito è in alto
+    score -= index; // il nome di solito è in alto (ma sui cartellini elettronici è sotto il prezzo)
     if (line.split(' ').length >= 2) score += 3;
+    if (line.length >= 15) score += 4;
 
     if (!best || score > best.score) best = { text: line, score };
   });
