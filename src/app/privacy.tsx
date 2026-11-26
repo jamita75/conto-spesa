@@ -24,15 +24,15 @@ const SECTIONS: { title: string; text: string }[] = [
   },
   {
     title: 'Negozi partner (secondo consenso, separato)',
-    text: 'Solo se lo accetti, le statistiche possono essere usate per report ai negozi partner, anche a pagamento. I partner ricevono solo dati aggregati (per insegna e reparto) che riguardano almeno 10 persone diverse: mai il codice, mai le singole spese. In cambio puoi ricevere nell\'app le loro offerte riservate.',
+    text: 'Solo se lo accetti, le statistiche possono essere usate per report ai negozi partner, anche a pagamento. I partner ricevono solo dati aggregati (per insegna e reparto) che riguardano almeno 10 persone diverse: mai il codice, mai le singole spese. In cambio puoi ricevere nell\'app i loro buoni sconto.',
   },
   {
     title: 'Dove e per quanto',
     text: 'Sul server del titolare in Italia, per 24 mesi, poi cancellazione automatica. Il fornitore di hosting è responsabile del trattamento. Come ogni sito, il server può annotare l\'indirizzo di rete nei registri tecnici del fornitore; il sistema di raccolta non lo salva.',
   },
   {
-    title: 'Offerte riservate',
-    text: 'Con il consenso ai partner, all\'apertura l\'app scarica l\'elenco delle offerte da un file pubblico su GitHub, collegandosi a quel servizio come a un normale sito. Lo stato di «Socio fondatore» resta sul telefono.',
+    title: 'Buoni dei negozi partner',
+    text: 'Con il consenso ai partner, all\'apertura l\'app scarica l\'elenco delle offerte da un file pubblico su GitHub, collegandosi a quel servizio come a un normale sito. La data in cui hai dato l\'autorizzazione resta solo sul telefono.',
   },
   {
     title: 'I tuoi diritti',

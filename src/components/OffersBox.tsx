@@ -10,7 +10,7 @@ import { colors, font, radius, space } from '../lib/theme';
 import { useStore } from '../store/AppStore';
 
 /**
- * Sezione «Offerte riservate»: chiusa col lucchetto finché non si accetta la condivisione
+ * Sezione «Scopri buoni che non conosci»: chiusa finché l'utente non dà l'autorizzazione
  * con i negozi partner. Le offerte arrivano dal file online, senza aggiornare l'app.
  */
 export function OffersBox() {
@@ -24,12 +24,12 @@ export function OffersBox() {
         style={[styles.box, styles.locked]}
         onPress={() =>
           Alert.alert(
-            'Sbloccare le offerte riservate?',
-            'Condividi in forma anonima cosa compri (mai nome, telefono o posizione) con i negozi partner. In cambio ricevi qui i loro buoni sconto riservati. Puoi smettere quando vuoi dal Profilo. Confermi di avere almeno 14 anni.',
+            'Vuoi ricevere nuovi buoni sconto?',
+            'Per mandarti qui i buoni dei negozi partner ci serve la tua autorizzazione a usare in forma anonima cosa compri (mai nome, telefono o posizione). Puoi toglierla quando vuoi dal Profilo. Confermi di avere almeno 14 anni.',
             [
               { text: 'Non ora', style: 'cancel' },
               {
-                text: 'Sblocca',
+                text: 'Sì, autorizzo',
                 onPress: () => {
                   dispatch(consentAction({ stats: true, partners: true }));
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -39,10 +39,13 @@ export function OffersBox() {
           )
         }
       >
-        <Text style={styles.lock}>🔒</Text>
+        <Text style={styles.lock}>🎁</Text>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Offerte riservate</Text>
-          <Text style={styles.text}>Buoni sconto dei negozi partner, solo per chi condivide i dati anonimi. Tocca per sbloccare.</Text>
+          <Text style={styles.title}>Scopri buoni sconto che non conosci</Text>
+          <Text style={styles.text}>I negozi partner hanno buoni che forse non hai ancora. Per riceverli qui serve la tua autorizzazione.</Text>
+          <View style={styles.cta}>
+            <Text style={styles.ctaText}>✓ Autorizzo e ricevo i buoni</Text>
+          </View>
         </View>
       </Pressable>
     );
@@ -54,15 +57,12 @@ export function OffersBox() {
   return (
     <View style={[styles.box, styles.open]}>
       <View style={styles.head}>
-        <Text style={styles.title}>🎁 Offerte riservate</Text>
-        {isFounder ? <Text style={styles.badge}>⭐ Socio fondatore</Text> : null}
+        <Text style={styles.title}>🎁 Buoni che non conoscevi</Text>
       </View>
 
       {offers.length === 0 ? (
         <Text style={styles.text}>
-          {isFounder
-            ? 'Sei tra i primi: appena un negozio partner attiva un buono lo trovi qui, prima degli altri.'
-            : 'Appena un negozio partner attiva un buono lo trovi qui.'}
+          Appena un negozio partner attiva un nuovo buono lo trovi qui: torna a dare un'occhiata prima della spesa.
         </Text>
       ) : (
         offers.map((o) => {
@@ -89,7 +89,7 @@ export function OffersBox() {
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }}
               >
-                <Text style={[styles.takeText, taken && { color: colors.primaryDark }]}>{taken ? '✓ Tuo' : 'Prendi'}</Text>
+                <Text style={[styles.takeText, taken && { color: colors.primaryDark }]}>{taken ? '✓ Tuo' : 'Prendilo'}</Text>
               </Pressable>
             </View>
           );
@@ -107,6 +107,8 @@ const styles = StyleSheet.create({
   locked: { flexDirection: 'row', gap: space(3), alignItems: 'center', backgroundColor: colors.accentSoft, borderColor: colors.accent, borderStyle: 'dashed' },
   open: { backgroundColor: colors.card, borderColor: colors.accent },
   lock: { fontSize: 36 },
+  cta: { alignSelf: 'flex-start', marginTop: space(3), backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: space(3), paddingHorizontal: space(4) },
+  ctaText: { color: '#fff', fontWeight: '800', fontSize: font.body },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space(2), flexWrap: 'wrap' },
   title: { fontSize: font.big, fontWeight: '800', color: colors.text },
   badge: { fontSize: 13, fontWeight: '800', color: colors.text, backgroundColor: colors.accentSoft, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, overflow: 'hidden' },

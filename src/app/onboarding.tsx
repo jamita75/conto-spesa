@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BigButton, Card, SwitchRow } from '../components/ui';
-import { isFounderEligible } from '../features/offers/feed';
 import { colors, font, space } from '../lib/theme';
 import { useStore } from '../store/AppStore';
 
@@ -41,11 +40,11 @@ export default function Onboarding() {
         </>
       ) : (
         <>
-          <Text style={styles.logo}>🔓</Text>
-          <Text style={styles.title}>Sblocca le offerte riservate</Text>
+          <Text style={styles.logo}>🎁</Text>
+          <Text style={styles.title}>Scopri buoni sconto che non conosci</Text>
           <Text style={styles.subtitle}>
-            Condividi in forma anonima cosa compri e ricevi nell'app i buoni sconto dei negozi partner.
-            {isFounderEligible() ? ' Chi accetta ora diventa ⭐ Socio fondatore: i buoni li vede per primo.' : ''}
+            Ricevi nell'app i buoni dei negozi partner, anche quelli che non trovi sul volantino. Per mandarteli serve la tua
+            autorizzazione a usare in forma anonima cosa compri.
           </Text>
 
           <Card style={{ marginTop: space(6) }}>
@@ -80,7 +79,7 @@ export default function Onboarding() {
             <>
               {/* «Accetta» e «Rifiuta» con la stessa evidenza: il consenso deve essere libero (GDPR) */}
               <BigButton
-                label={isFounderEligible() ? 'Sblocca e diventa Socio fondatore' : 'Sblocca le offerte'}
+                label="✓ Autorizzo e ricevo i buoni"
                 onPress={() => {
                   dispatch(consentAction({ stats: true, partners: true }));
                   finish();
@@ -88,7 +87,7 @@ export default function Onboarding() {
                 style={{ marginTop: space(2) }}
               />
               <BigButton
-                label="Continua senza condividere"
+                label="Continua senza autorizzare"
                 variant="ghost"
                 onPress={() => {
                   dispatch(consentAction({ stats: false, partners: false }));
