@@ -63,4 +63,5 @@ jobs:
         run: |
           gh release create "v$VERSION" conto-spesa-v$VERSION.apk \
             --title "Conto Spesa v$VERSION" \
-            --notes "APK Android. Apri il file dal telefono e installalo (consenti l'installazione da origini sconosciute)."
+            --notes "APK Android. Apri il file dal telefono e installalo (consenti l'installazione da origini sconosciute)." \
+            $([ "${{ github.ref_name }}" != "main" ] && echo "--prerelease --target ${{ github.ref_name }}")
