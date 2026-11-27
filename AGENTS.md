@@ -100,6 +100,10 @@ storico delle spese e consensi privacy per statistiche anonime. Pubblico: anche 
 - Ogni nuova funzione: cartella in `src/features/`, logica pura + test in `tests/run.ts`, poi la schermata.
 - Prima di chiudere un lavoro: `npm run typecheck` e `npm test`.
 
+### Prove in corso
+- Ramo `prova-contrasto` (APK 1.7.3-prova, versionCode 18, pre-release): contrasto con Skia prima dell'OCR, +11 MB.
+  La prossima versione su main deve avere versionCode ≥ 19 (chi ha installato la prova non può scendere).
+
 ### Idee per il futuro (non ancora fatte)
 - Lettura codice EAN del prodotto per nome/categoria automatici
 - Lista della spesa condivisa
